@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Background Check Tracker icon">
+  <rect width="64" height="64" rx="16" fill="#0f172a" />
+  <path
+    d="M20 22.5C20 20.567 21.567 19 23.5 19h12.379c.928 0 1.818.369 2.475 1.025l4.621 4.621A3.5 3.5 0 0 1 44 27.121V41.5A3.5 3.5 0 0 1 40.5 45h-17A3.5 3.5 0 0 1 20 41.5v-19Z"
+    fill="#f8fafc"
+  />
+  <path
+    d="M38 19.25V25a2 2 0 0 0 2 2h5.75"
+    fill="none"
+    stroke="#0f172a"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+    stroke-width="2.5"
+  />
+  <path
+    d="m26.5 34 3.5 3.5 7.5-8"
+    fill="none"
+    stroke="#16a34a"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+    stroke-width="3.5"
+  />
+</svg>
