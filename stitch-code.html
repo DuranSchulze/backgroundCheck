@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Verification Tracking | Client Portal</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700;800&amp;family=Inter:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f8fafc;
+        }
+        h1, h2, h3, .font-headline {
+            font-family: 'Manrope', sans-serif;
+        }
+        .premium-shadow {
+            box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.05), 0 2px 10px -2px rgba(0, 0, 0, 0.02);
+        }
+    </style>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        primary: "#001d44",
+                        "primary-container": "#00326b",
+                        secondary: "#505f75",
+                        surface: "#f8fafc",
+                        "on-surface": "#191c1e",
+                        "on-surface-variant": "#43474f",
+                        outline: "#737780",
+                        "outline-variant": "#c3c6d1",
+                        "surface-container-lowest": "#ffffff"
+                    },
+                    borderRadius: {
+                        DEFAULT: "1rem",
+                        lg: "1.5rem",
+                        xl: "2rem"
+                    }
+                }
+            }
+        };
+    </script>
+</head>
+<body class="text-on-surface min-h-screen selection:bg-blue-100 selection:text-primary">
+<main class="max-w-2xl mx-auto px-6 py-16 md:py-24">
+<!-- Top Badge -->
+<div class="flex justify-center mb-12">
+<span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-50 text-blue-700 text-[10px] font-bold uppercase tracking-widest border border-blue-100">
+<span class="w-1.5 h-1.5 rounded-full bg-blue-600 animate-pulse"></span>
+            Client Portal
+        </span>
+</div>
+<!-- Hero Header -->
+<header class="text-center mb-16">
+<h1 class="text-on-surface font-headline font-extrabold text-4xl md:text-5xl tracking-tight mb-4">Verification Tracking</h1>
+<p class="text-on-surface-variant font-body max-w-md mx-auto text-lg leading-relaxed">Enter your reference number to monitor your background check status in real-time.</p>
+</header>
+<!-- Tracking Input Section -->
+<section class="mb-16">
+<div class="bg-surface-container-lowest p-2 premium-shadow border border-gray-100 rounded-full">
+<div class="flex flex-col md:flex-row items-stretch gap-2">
+<div class="flex-1 relative">
+<div class="absolute left-6 top-1/2 -translate-y-1/2 text-outline">
+<span class="material-symbols-outlined text-xl">fingerprint</span>
+</div>
+<input class="w-full bg-transparent border-0 pl-14 pr-6 py-5 text-lg font-body focus:ring-0 placeholder:text-outline-variant" id="ref-input" placeholder="Reference Number (e.g. BG-7742)" type="text" value="BG-7742-VERIF"/>
+</div>
+<button class="bg-primary text-white px-8 py-4 font-headline font-bold hover:bg-primary-container transition-all active:scale-[0.98] flex items-center justify-center gap-2 rounded-full">
+<span class="material-symbols-outlined text-xl" data-icon="search">search</span>
+                    Track Progress
+                </button>
+</div>
+</div>
+</section>
+<!-- Tracking Results (Single Column Flow) -->
+<div class="space-y-8">
+<!-- Main Status Card -->
+<div class="bg-surface-container-lowest p-10 rounded-2xl premium-shadow border border-gray-100">
+<div class="flex flex-col items-center text-center">
+<!-- Circular Progress -->
+<div class="relative w-40 h-40 mb-8">
+<svg class="w-full h-full -rotate-90" viewbox="0 0 100 100">
+<circle class="text-gray-100 stroke-current" cx="50" cy="50" fill="transparent" r="44" stroke-width="6"></circle>
+<circle class="text-primary stroke-current" cx="50" cy="50" fill="transparent" r="44" stroke-dasharray="276.46" stroke-dashoffset="69.11" stroke-linecap="round" stroke-width="6"></circle>
+</svg>
+<div class="absolute inset-0 flex flex-col items-center justify-center">
+<span class="text-4xl font-headline font-extrabold text-primary leading-none">75%</span>
+<span class="text-[10px] font-label font-bold text-on-surface-variant uppercase tracking-widest mt-1">Completed</span>
+</div>
+</div>
+<div class="space-y-2">
+<span class="text-[11px] font-bold text-orange-700 bg-orange-50 px-3 py-1 rounded-full uppercase tracking-[0.15em]">Active Investigation</span>
+<h2 class="text-3xl font-headline font-bold text-primary">Verification in Progress</h2>
+<p class="text-on-surface-variant font-medium">Expected Completion: <span class="text-on-surface font-bold">Oct 24, 2023</span></p>
+</div>
+</div>
+</div>
+<!-- Pipeline Section -->
+<div class="bg-surface-container-lowest p-10 rounded-2xl premium-shadow border border-gray-100">
+<h3 class="text-[10px] font-bold text-outline uppercase tracking-[0.25em] mb-10 text-center">Verification Pipeline</h3>
+<div class="max-w-md mx-auto space-y-0">
+<!-- Stage 1 -->
+<div class="flex gap-8 pb-12 relative">
+<div class="absolute left-4 top-8 bottom-0 w-[2px] bg-blue-50"></div>
+<div class="z-10 bg-blue-600 text-white w-8 h-8 rounded-full flex items-center justify-center shrink-0 shadow-lg shadow-blue-100">
+<span class="material-symbols-outlined text-sm" data-icon="check">check</span>
+</div>
+<div class="flex-1">
+<div class="flex justify-between items-baseline mb-1">
+<h4 class="font-headline font-bold text-on-surface">Identity Verification</h4>
+<span class="text-[10px] font-bold text-blue-600 uppercase">Success</span>
+</div>
+<p class="text-sm text-on-surface-variant leading-relaxed">Biometric and passport documentation verified against global databases.</p>
+</div>
+</div>
+<!-- Stage 2 -->
+<div class="flex gap-8 pb-12 relative">
+<div class="absolute left-4 top-8 bottom-0 w-[2px] bg-blue-50"></div>
+<div class="z-10 bg-blue-600 text-white w-8 h-8 rounded-full flex items-center justify-center shrink-0 shadow-lg shadow-blue-100">
+<span class="material-symbols-outlined text-sm" data-icon="check">check</span>
+</div>
+<div class="flex-1">
+<div class="flex justify-between items-baseline mb-1">
+<h4 class="font-headline font-bold text-on-surface">Criminal Record Check</h4>
+<span class="text-[10px] font-bold text-blue-600 uppercase">Success</span>
+</div>
+<p class="text-sm text-on-surface-variant leading-relaxed">Multi-jurisdictional search conducted. No adverse findings reported.</p>
+</div>
+</div>
+<!-- Stage 3 (Active) -->
+<div class="flex gap-8 pb-12 relative">
+<div class="absolute left-4 top-8 bottom-0 w-[2px] bg-blue-50"></div>
+<div class="z-10 bg-white border-2 border-primary w-8 h-8 rounded-full flex items-center justify-center shrink-0">
+<div class="w-2.5 h-2.5 bg-primary rounded-full animate-pulse"></div>
+</div>
+<div class="flex-1">
+<div class="flex justify-between items-baseline mb-1">
+<h4 class="font-headline font-bold text-primary">Employment History</h4>
+<span class="text-[10px] font-bold text-primary bg-blue-50 px-2 py-0.5 rounded">Processing</span>
+</div>
+<p class="text-sm text-on-surface-variant leading-relaxed">Contacting previous employers to confirm tenure and seniority claims.</p>
+</div>
+</div>
+<!-- Stage 4 -->
+<div class="flex gap-8">
+<div class="z-10 bg-gray-100 w-8 h-8 rounded-full flex items-center justify-center shrink-0">
+</div>
+<div class="flex-1">
+<div class="flex justify-between items-baseline mb-1">
+<h4 class="font-headline font-bold text-outline">Education Verification</h4>
+<span class="text-[10px] font-bold text-outline uppercase tracking-wider">Queued</span>
+</div>
+<p class="text-sm text-outline opacity-60 leading-relaxed">Academic credential verification will begin following employment clearance.</p>
+</div>
+</div>
+</div>
+</div>
+<!-- Metadata Grid -->
+<div class="bg-gray-50/50 p-10 rounded-2xl border border-gray-100">
+<div class="grid grid-cols-2 gap-y-8 gap-x-12">
+<div>
+<div class="text-[9px] font-bold text-outline uppercase tracking-widest mb-1.5">Request Entity</div>
+<div class="text-sm font-headline font-bold text-on-surface">Stark Industries Global</div>
+</div>
+<div>
+<div class="text-[9px] font-bold text-outline uppercase tracking-widest mb-1.5">Case Manager</div>
+<div class="text-sm font-headline font-bold text-on-surface">Evelyn Vance</div>
+</div>
+<div>
+<div class="text-[9px] font-bold text-outline uppercase tracking-widest mb-1.5">Request Date</div>
+<div class="text-sm font-headline font-bold text-on-surface">October 12, 2023</div>
+</div>
+<div>
+<div class="text-[9px] font-bold text-outline uppercase tracking-widest mb-1.5">Case ID</div>
+<div class="text-sm font-headline font-bold text-on-surface">EL-BG-2023-7742</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Footer Help -->
+<footer class="mt-16 text-center">
+<p class="text-sm text-on-surface-variant">Need assistance? <a class="text-primary font-bold hover:underline" href="#">Contact Support</a></p>
+</footer>
+</main>
+<!-- Support Help Floating Button -->
+</body></html>

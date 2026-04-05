@@ -7,7 +7,7 @@ interface PipelineStepProps {
   title: string;
   description: string;
   status: StepStatus;
-  stepNumber: number;
+  isLast?: boolean;
 }
 
 const iconByStatus: Record<StepStatus, ReactElement> = {
@@ -26,14 +26,7 @@ const iconByStatus: Record<StepStatus, ReactElement> = {
     </svg>
   ),
   "in-progress": (
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      viewBox="0 0 20 20"
-      fill="currentColor"
-      className="h-4 w-4"
-    >
-      <circle cx="10" cy="10" r="4" />
-    </svg>
+    <div className="w-2.5 h-2.5 bg-primary rounded-full animate-pulse" />
   ),
   queued: (
     <svg
@@ -48,42 +41,66 @@ const iconByStatus: Record<StepStatus, ReactElement> = {
 };
 
 const iconContainerByStatus: Record<StepStatus, string> = {
-  completed: "bg-slate-900 text-white",
-  "in-progress": "bg-amber-400 text-white",
-  queued: "bg-slate-200 text-slate-400",
+  completed: "bg-[#1f1a0d] text-white shadow-lg shadow-amber-100",
+  "in-progress": "border-2 border-primary bg-white shadow-md shadow-amber-100",
+  queued: "bg-surface-container-high text-outline",
+};
+
+const textColorByStatus: Record<StepStatus, string> = {
+  completed: "text-on-surface",
+  "in-progress": "text-primary",
+  queued: "text-outline",
+};
+
+const descriptionColorByStatus: Record<StepStatus, string> = {
+  completed: "text-on-surface-variant",
+  "in-progress": "text-on-surface-variant",
+  queued: "text-outline opacity-60",
 };
 
 export default function PipelineStep({
   title,
   description,
   status,
+  isLast = false,
 }: PipelineStepProps) {
   return (
-    <div className="flex items-start gap-4">
+    <div className="flex gap-8 pb-12 relative last:pb-0">
+      {!isLast && (
+        <div className="absolute left-4 top-8 bottom-0 w-[2px] bg-primary-fixed"></div>
+      )}
       <div
         className={[
-          "mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full",
+          "z-10 w-8 h-8 rounded-full flex items-center justify-center shrink-0",
           iconContainerByStatus[status],
         ].join(" ")}
       >
         {iconByStatus[status]}
       </div>
-      <div className="flex flex-1 flex-col gap-0.5">
-        <div className="flex items-center gap-3">
-          <span
+      <div className="flex-1">
+        <div className="flex justify-between items-baseline mb-1">
+          <h4
             className={[
-              "text-sm font-semibold",
-              status === "queued" ? "text-slate-400" : "text-slate-800",
+              "font-headline font-bold",
+              textColorByStatus[status],
             ].join(" ")}
           >
             {title}
-          </span>
-          <Badge status={status} />
+          </h4>
+          <Badge
+            status={
+              status === "completed"
+                ? "success"
+                : status === "in-progress"
+                  ? "processing"
+                  : "queued"
+            }
+          />
         </div>
         <p
           className={[
-            "text-xs leading-relaxed",
-            status === "queued" ? "text-slate-400" : "text-slate-500",
+            "text-sm leading-relaxed",
+            descriptionColorByStatus[status],
           ].join(" ")}
         >
           {description}

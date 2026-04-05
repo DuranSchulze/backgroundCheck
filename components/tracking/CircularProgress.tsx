@@ -4,16 +4,16 @@ interface CircularProgressProps {
   strokeWidth?: number;
   trackColor?: string;
   progressColor?: string;
-  label?: string;
+  sublabel?: string;
 }
 
 export default function CircularProgress({
   percent,
-  size = 100,
-  strokeWidth = 8,
-  trackColor = "#e2e8f0",
-  progressColor = "#f59e0b",
-  label,
+  size = 160,
+  strokeWidth = 6,
+  trackColor = "#f4e7bb",
+  progressColor = "var(--color-primary)",
+  sublabel,
 }: CircularProgressProps) {
   const radius = (size - strokeWidth) / 2;
   const circumference = 2 * Math.PI * radius;
@@ -44,16 +44,16 @@ export default function CircularProgress({
           style={{ transition: "stroke-dashoffset 0.6s ease" }}
         />
       </svg>
-      <span className="absolute flex flex-col items-center justify-center rotate-0">
-        <span className="text-xl font-bold text-slate-900 leading-none">
+      <div className="absolute inset-0 flex flex-col items-center justify-center rounded-full bg-white/75 rotate-0">
+        <span className="text-4xl font-headline font-extrabold text-primary leading-none">
           {percent}%
         </span>
-        {label && (
-          <span className="mt-0.5 text-[10px] font-medium text-slate-500">
-            {label}
+        {sublabel && (
+          <span className="mt-1 text-[10px] font-bold uppercase tracking-widest text-on-surface-variant">
+            {sublabel}
           </span>
         )}
-      </span>
+      </div>
     </div>
   );
 }

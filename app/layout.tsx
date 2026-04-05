@@ -2,8 +2,9 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Background Check Tracker",
-  description: "Minimal Next.js and Tailwind starter for the Background Check Tracker project.",
+  title: "Verification Tracking | Client Portal",
+  description:
+    "Track the real-time status of your background check processing.",
 };
 
 export default function RootLayout({
@@ -13,7 +14,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className="min-h-screen bg-white text-slate-950 antialiased">
+      <body className="min-h-screen bg-surface text-on-surface antialiased selection:bg-primary-fixed selection:text-primary">
         {children}
       </body>
     </html>

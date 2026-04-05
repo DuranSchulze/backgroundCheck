@@ -1,7 +1,4 @@
-export interface MetadataField {
-  label: string;
-  value: string;
-}
+import type { MetadataField } from "@/lib/tracking/types";
 
 interface RequestMetadataProps {
   fields: MetadataField[];
@@ -9,20 +6,19 @@ interface RequestMetadataProps {
 
 export default function RequestMetadata({ fields }: RequestMetadataProps) {
   return (
-    <div className="rounded-xl border border-slate-200 bg-white p-5">
-      <h3 className="mb-4 text-xs font-bold uppercase tracking-widest text-slate-400">
-        Request Metadata
-      </h3>
-      <dl className="flex flex-col gap-3">
+    <div className="rounded-[1.75rem] border border-amber-200 bg-white p-8 sm:p-10">
+      <div className="grid grid-cols-2 gap-y-8 gap-x-12">
         {fields.map((field) => (
-          <div key={field.label} className="flex flex-col gap-0.5">
-            <dt className="text-[10px] font-semibold uppercase tracking-widest text-slate-400">
+          <div key={field.label}>
+            <div className="mb-1.5 text-[9px] font-bold uppercase tracking-widest text-outline">
               {field.label}
-            </dt>
-            <dd className="text-sm font-medium text-slate-800">{field.value}</dd>
+            </div>
+            <div className="text-sm font-headline font-bold text-on-surface">
+              {field.value}
+            </div>
           </div>
         ))}
-      </dl>
+      </div>
     </div>
   );
 }
