@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
-import "./globals.css";
 import { Inter, Manrope } from "next/font/google";
+import { GooeyToaster } from "@/components/ui/goey-toaster";
 import { cn } from "@/lib/utils";
+import "./globals.css";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -29,6 +30,7 @@ export default function RootLayout({
     <html lang="en" className={cn(inter.variable, manrope.variable)}>
       <body className="min-h-screen bg-surface text-on-surface antialiased selection:bg-primary-fixed selection:text-primary">
         {children}
+        <GooeyToaster />
       </body>
     </html>
   );

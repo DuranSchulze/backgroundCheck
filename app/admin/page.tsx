@@ -1,6 +1,6 @@
-import Link from "next/link";
 import { redirect } from "next/navigation";
 import { clearAdminSession, isAdminAuthenticated } from "@/lib/admin-auth";
+import AdminDashboard from "@/components/admin/AdminDashboard";
 import { listSheetOrderSnapshots } from "@/lib/tracking/google-sheets";
 
 export const dynamic = "force-dynamic";
@@ -37,14 +37,14 @@ export default async function AdminPage() {
         <div className="flex flex-col gap-4 rounded-[2rem] border border-amber-200 bg-white/90 p-6 shadow-[0_18px_60px_rgba(66,44,0,0.08)] md:flex-row md:items-end md:justify-between">
           <div>
             <p className="text-[11px] font-bold uppercase tracking-[0.28em] text-outline">
-              Admin Dashboard
+              Operations Console
             </p>
             <h1 className="mt-2 font-headline text-3xl font-extrabold text-on-surface md:text-4xl">
-              Google Sheets Intake Viewer
+              Background Check Project Tracker
             </h1>
             <p className="mt-3 max-w-2xl text-sm leading-7 text-on-surface-variant">
-              Read-only admin access for checking whether the app can load intake
-              rows from Google Sheets using the configured service-account file.
+              Manage the live case queue, inspect project intake, and move into
+              each order&apos;s tracking workspace from a single admin surface.
             </p>
           </div>
 
@@ -79,7 +79,7 @@ export default async function AdminPage() {
               {loadError ? "Unavailable" : rows.length}
             </p>
             <p className="mt-2 text-sm text-on-surface-variant">
-              Intake rows currently visible from the configured sheet range.
+              Active order rows currently visible from the configured sheet range.
             </p>
           </div>
 
@@ -91,74 +91,22 @@ export default async function AdminPage() {
               Order Tracking Number, Email
             </p>
             <p className="mt-2 text-sm text-on-surface-variant">
-              Showing requestor email and subject email to validate mapping.
+              Queue browsing is optimized with search, filters, views, and pagination.
             </p>
           </div>
         </div>
 
-        <section className="overflow-hidden rounded-[2rem] border border-amber-200 bg-white shadow-[0_18px_60px_rgba(66,44,0,0.06)]">
-          <div className="border-b border-amber-100 px-6 py-5">
-            <h2 className="font-headline text-xl font-bold text-on-surface">
-              Read-Only Intake Rows
-            </h2>
-            <p className="mt-2 text-sm text-on-surface-variant">
-              This page does not write back to Google Sheets or Prisma. It only
-              reads and displays the connected intake rows.
-            </p>
-          </div>
-
-          {loadError ? (
-            <div className="px-6 py-8 text-sm text-error">{loadError}</div>
-          ) : rows.length === 0 ? (
-            <div className="px-6 py-8 text-sm text-on-surface-variant">
-              No rows were returned from the configured Google Sheet range.
-            </div>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-amber-100">
-                <thead className="bg-[#fffaf0]">
-                  <tr className="text-left text-[11px] font-bold uppercase tracking-[0.2em] text-outline">
-                    <th className="px-6 py-4">Order Tracking Number</th>
-                    <th className="px-6 py-4">Requestor Email</th>
-                    <th className="px-6 py-4">Subject Email</th>
-                    <th className="px-6 py-4">Subject Name</th>
-                    <th className="px-6 py-4">Purpose</th>
-                    <th className="px-6 py-4">Action</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-amber-50">
-                  {rows.map((row) => (
-                    <tr key={row.trackingNumber} className="align-top">
-                      <td className="px-6 py-4 text-sm font-semibold text-on-surface">
-                        {row.trackingNumber}
-                      </td>
-                      <td className="px-6 py-4 text-sm text-on-surface-variant">
-                        {row.submitterEmail || "Not provided"}
-                      </td>
-                      <td className="px-6 py-4 text-sm text-on-surface-variant">
-                        {row.subjectEmail || "Not provided"}
-                      </td>
-                      <td className="px-6 py-4 text-sm text-on-surface-variant">
-                        {row.subjectName || "Not provided"}
-                      </td>
-                      <td className="px-6 py-4 text-sm text-on-surface-variant">
-                        {row.purpose || "Not provided"}
-                      </td>
-                      <td className="px-6 py-4">
-                        <Link
-                          href={`/admin/orders/${encodeURIComponent(row.trackingNumber)}`}
-                          className="inline-flex rounded-full border border-[#f0ca52] bg-primary px-4 py-2 text-xs font-bold uppercase tracking-[0.18em] text-[color:var(--color-on-primary)] transition-colors hover:bg-primary-container"
-                        >
-                          View Details
-                        </Link>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </section>
+        {loadError ? (
+          <section className="rounded-[2rem] border border-amber-200 bg-white p-6 text-sm text-error shadow-[0_18px_60px_rgba(66,44,0,0.06)]">
+            {loadError}
+          </section>
+        ) : rows.length === 0 ? (
+          <section className="rounded-[2rem] border border-amber-200 bg-white p-6 text-sm text-on-surface-variant shadow-[0_18px_60px_rgba(66,44,0,0.06)]">
+            No rows were returned from the configured Google Sheet range.
+          </section>
+        ) : (
+          <AdminDashboard rows={rows} />
+        )}
       </section>
     </main>
   );

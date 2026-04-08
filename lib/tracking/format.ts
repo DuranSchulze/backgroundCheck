@@ -45,6 +45,38 @@ export function getCheckCategoryLabel(checkType: CheckCategory) {
   return CHECK_CATEGORY_LABELS[checkType];
 }
 
+export function stripColumnSuffix(header: string): string {
+  return header.split("|")[0].trim();
+}
+
+export function getCheckedColumnLabels(rawFields: Record<string, string>): string[] {
+  return Object.entries(rawFields)
+    .filter(([key]) => /\|checkbox-/i.test(key))
+    .filter(([, value]) => value.trim().length > 0)
+    .map(([key]) => stripColumnSuffix(key))
+    .filter(Boolean);
+}
+
+export function getCheckedColumnDetails(
+  rawFields: Record<string, string>,
+): Array<{ label: string; value: string }> {
+  return Object.entries(rawFields)
+    .filter(([key]) => /\|checkbox-/i.test(key))
+    .filter(([, value]) => value.trim().length > 0)
+    .map(([key, value]) => ({ label: stripColumnSuffix(key), value: value.trim() }))
+    .filter((item) => item.label.length > 0);
+}
+
+export function getUploadFields(
+  rawFields: Record<string, string>,
+): Array<{ label: string; url: string }> {
+  return Object.entries(rawFields)
+    .filter(([key]) => /\|upload-/i.test(key))
+    .filter(([, value]) => value.trim().length > 0)
+    .map(([key, value]) => ({ label: stripColumnSuffix(key), url: value.trim() }))
+    .filter((item) => item.label.length > 0);
+}
+
 export function mapProgressStatusToTrackingStatus(
   status: CheckProgressStatus | null,
 ): TrackingStatus {

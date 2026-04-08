@@ -2,7 +2,12 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { isAdminAuthenticated } from "@/lib/admin-auth";
 import { getAdminTrackingDetail } from "@/lib/tracking/admin";
-import { getCheckCategoryLabel } from "@/lib/tracking/format";
+import {
+  getCheckCategoryLabel,
+  getCheckedColumnDetails,
+  stripColumnSuffix,
+} from "@/lib/tracking/format";
+import Badge from "@/components/ui/badge";
 
 export const dynamic = "force-dynamic";
 
@@ -23,7 +28,10 @@ function formatDateTime(value: string) {
 }
 
 function formatStatus(value: string) {
-  return value.replaceAll("_", " ").toLowerCase().replace(/\b\w/g, (letter) => letter.toUpperCase());
+  return value
+    .replaceAll("_", " ")
+    .toLowerCase()
+    .replace(/\b\w/g, (letter) => letter.toUpperCase());
 }
 
 export default async function OrderDetailPage({
@@ -45,6 +53,8 @@ export default async function OrderDetailPage({
     notFound();
   }
 
+  const checkDetails = getCheckedColumnDetails(detail.order.rawFields);
+
   const rawEntries = Object.entries(detail.order.rawFields).filter(
     ([, value]) => value.trim().length > 0,
   );
@@ -52,66 +62,65 @@ export default async function OrderDetailPage({
   return (
     <main className="min-h-screen bg-[radial-gradient(circle_at_top,_rgba(255,192,0,0.18),_transparent_45%),linear-gradient(180deg,#fffdf6_0%,#fffbef_100%)] px-6 py-10 md:px-10">
       <section className="mx-auto max-w-7xl space-y-8">
-        <div className="flex flex-col gap-4 rounded-[2rem] border border-amber-200 bg-white/90 p-6 shadow-[0_18px_60px_rgba(66,44,0,0.08)] md:flex-row md:items-end md:justify-between">
-          <div>
+        <div>
+          <Link
+            href="/admin"
+            className="inline-flex items-center gap-1.5 text-sm font-semibold text-on-surface-variant transition-colors hover:text-on-surface"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 20 20"
+              fill="currentColor"
+              className="h-4 w-4"
+            >
+              <path
+                fillRule="evenodd"
+                d="M17 10a.75.75 0 0 1-.75.75H5.612l4.158 3.96a.75.75 0 1 1-1.04 1.08l-5.5-5.25a.75.75 0 0 1 0-1.08l5.5-5.25a.75.75 0 1 1 1.04 1.08L5.612 9.25H16.25A.75.75 0 0 1 17 10Z"
+                clipRule="evenodd"
+              />
+            </svg>
+            Back to Orders
+          </Link>
+
+          <div className="mt-4">
             <p className="text-[11px] font-bold uppercase tracking-[0.28em] text-outline">
               Order Detail
             </p>
-            <h1 className="mt-2 font-headline text-3xl font-extrabold text-on-surface md:text-4xl">
+            <h1 className="mt-1 font-headline text-4xl font-extrabold text-on-surface">
               {detail.order.trackingNumber}
             </h1>
-            <p className="mt-3 max-w-3xl text-sm leading-7 text-on-surface-variant">
-              This page shows the selected checks from Google Sheets, the full raw
-              intake data, and the Prisma progress records initialized for this
-              order.
-            </p>
-          </div>
-
-          <Link
-            href="/admin"
-            className="inline-flex rounded-full border border-[#f0ca52] bg-primary px-5 py-3 text-sm font-bold uppercase tracking-[0.18em] text-[color:var(--color-on-primary)] transition-colors hover:bg-primary-container"
-          >
-            Back to Admin
-          </Link>
-        </div>
-
-        <div className="grid gap-4 md:grid-cols-4">
-          <div className="rounded-[1.6rem] border border-amber-200 bg-white p-5">
-            <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-outline">
-              Overall Status
-            </p>
-            <p className="mt-3 text-lg font-headline font-bold text-on-surface">
-              {detail.progress
-                ? formatStatus(detail.progress.overallStatus)
-                : "Queued"}
-            </p>
-          </div>
-
-          <div className="rounded-[1.6rem] border border-amber-200 bg-white p-5">
-            <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-outline">
-              Selected Checks
-            </p>
-            <p className="mt-3 text-lg font-headline font-bold text-on-surface">
-              {detail.order.selectedCheckCategories.length}
-            </p>
-          </div>
-
-          <div className="rounded-[1.6rem] border border-amber-200 bg-white p-5">
-            <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-outline">
-              Requestor Email
-            </p>
-            <p className="mt-3 text-sm font-semibold text-on-surface">
-              {detail.order.submitterEmail || "Not provided"}
-            </p>
-          </div>
-
-          <div className="rounded-[1.6rem] border border-amber-200 bg-white p-5">
-            <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-outline">
-              Subject Email
-            </p>
-            <p className="mt-3 text-sm font-semibold text-on-surface">
-              {detail.order.subjectEmail || "Not provided"}
-            </p>
+            <ul className="mt-4 flex flex-wrap gap-x-6 gap-y-2 text-sm">
+              <li className="flex items-center gap-2 text-on-surface-variant">
+                <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-primary" />
+                <span className="text-outline">Status</span>
+                <span className="font-semibold text-on-surface">
+                  {detail.progress
+                    ? formatStatus(detail.progress.overallStatus)
+                    : "Queued"}
+                </span>
+              </li>
+              <li className="flex items-center gap-2 text-on-surface-variant">
+                <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-primary" />
+                <span className="text-outline">Checks</span>
+                <span className="font-semibold text-on-surface">
+                  {detail.order.selectedCheckCategories.length}
+                </span>
+              </li>
+              <li className="flex items-center gap-2 text-on-surface-variant">
+                <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-primary" />
+                <span className="text-outline">Requestor</span>
+                <span className="font-semibold text-on-surface">
+                  {detail.order.submitterEmail || "Not provided"}
+                </span>
+              </li>
+              <li className="flex items-center gap-2 text-on-surface-variant">
+                <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-primary" />
+                <span className="text-outline">Subject</span>
+                <span className="font-semibold text-on-surface">
+                  {detail.order.subjectEmail || "Not provided"}
+                </span>
+              </li>
+            </ul>
           </div>
         </div>
 
@@ -125,40 +134,24 @@ export default async function OrderDetailPage({
                 Derived from the checkbox columns in the Google Sheet.
               </p>
 
-              <div className="mt-5 space-y-3">
-                {detail.order.selectedCheckCategories.length > 0 ? (
-                  detail.order.selectedCheckCategories.map((checkType) => {
-                    const progress = detail.checks.find(
-                      (check) => check.checkType === checkType,
-                    );
-
-                    return (
-                      <div
-                        key={checkType}
-                        className="rounded-[1.4rem] border border-amber-100 bg-[#fffaf0] p-4"
-                      >
-                        <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
-                          <div>
-                            <p className="font-headline text-lg font-bold text-on-surface">
-                              {getCheckCategoryLabel(checkType)}
-                            </p>
-                            <p className="mt-1 text-sm text-on-surface-variant">
-                              {progress?.notes ||
-                                progress?.timelineLabel ||
-                                "No admin notes yet for this check."}
-                            </p>
-                          </div>
-                          <span className="inline-flex rounded-full border border-amber-200 bg-white px-3 py-1 text-[11px] font-bold uppercase tracking-[0.2em] text-outline">
-                            {formatStatus(progress?.status ?? "QUEUED")}
-                          </span>
-                        </div>
-                      </div>
-                    );
-                  })
+              <div className="mt-5 flex flex-wrap gap-3">
+                {checkDetails.length > 0 ? (
+                  checkDetails.map((check) => (
+                    <div
+                      key={check.label}
+                      className="inline-flex flex-col gap-1 rounded-2xl border border-primary-fixed-dim bg-primary-fixed px-4 py-2.5"
+                    >
+                      <Badge status="processing" label={check.label} />
+                      <span className="text-[11px] font-medium text-on-surface-variant">
+                        {check.value.replace(/-/g, " ").replace(/–/g, "–")}
+                      </span>
+                    </div>
+                  ))
                 ) : (
-                  <div className="rounded-[1.4rem] border border-amber-100 bg-[#fffaf0] p-4 text-sm text-on-surface-variant">
-                    No checkbox-based checks were selected on the Google Sheet row.
-                  </div>
+                  <p className="text-sm text-on-surface-variant">
+                    No checkbox-based checks were selected on the Google Sheet
+                    row.
+                  </p>
                 )}
               </div>
             </div>
@@ -168,8 +161,8 @@ export default async function OrderDetailPage({
                 Database Progress Snapshot
               </h2>
               <p className="mt-2 text-sm text-on-surface-variant">
-                These records come from Prisma and are initialized when this page
-                is opened.
+                These records come from Prisma and are initialized when this
+                page is opened.
               </p>
 
               <div className="mt-5 grid gap-4 md:grid-cols-2">
@@ -227,7 +220,9 @@ export default async function OrderDetailPage({
                       </span>
                     </div>
                     <p className="mt-2 text-sm text-on-surface-variant">
-                      {check.notes || check.timelineLabel || "No saved details yet."}
+                      {check.notes ||
+                        check.timelineLabel ||
+                        "No saved details yet."}
                     </p>
                   </div>
                 ))}
@@ -244,19 +239,56 @@ export default async function OrderDetailPage({
             </p>
 
             <div className="mt-5 grid gap-4 md:grid-cols-2">
-              {rawEntries.map(([label, value]) => (
-                <div
-                  key={label}
-                  className="rounded-[1.2rem] border border-amber-100 bg-[#fffaf0] p-4"
-                >
-                  <div className="text-[11px] font-bold uppercase tracking-[0.18em] text-outline">
-                    {label}
+              {rawEntries.map(([rawLabel, value]) => {
+                const label = stripColumnSuffix(rawLabel);
+                const isUpload = /\|upload-/i.test(rawLabel);
+                const isImage = /\.(png|jpe?g|gif|webp|svg)$/i.test(value);
+
+                return (
+                  <div
+                    key={rawLabel}
+                    className="rounded-[1.2rem] border border-amber-100 bg-[#fffaf0] p-4"
+                  >
+                    <div className="text-[11px] font-bold uppercase tracking-[0.18em] text-outline">
+                      {label}
+                    </div>
+                    <div className="mt-2">
+                      {isUpload ? (
+                        isImage ? (
+                          <a
+                            href={value}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="block"
+                          >
+                            <img
+                              src={value}
+                              alt={label}
+                              className="h-36 w-full rounded-xl object-cover ring-1 ring-amber-200 transition hover:opacity-90"
+                            />
+                            <span className="mt-1.5 inline-flex items-center gap-1 text-[11px] font-semibold text-primary hover:underline">
+                              Open full image ↗
+                            </span>
+                          </a>
+                        ) : (
+                          <a
+                            href={value}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-2 rounded-full border border-[#f0ca52] bg-primary px-4 py-2 text-xs font-bold uppercase tracking-[0.16em] text-[color:var(--color-on-primary)] transition hover:bg-primary-container"
+                          >
+                            View Attachment ↗
+                          </a>
+                        )
+                      ) : (
+                        <div className="break-words text-sm leading-6 text-on-surface-variant">
+                          {value}
+                        </div>
+                      )}
+                    </div>
                   </div>
-                  <div className="mt-2 break-words text-sm leading-6 text-on-surface-variant">
-                    {value}
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
 
             <div className="mt-6 rounded-[1.4rem] border border-amber-100 bg-[#fffaf0] p-5">
@@ -266,7 +298,10 @@ export default async function OrderDetailPage({
               <div className="mt-4 space-y-3">
                 {detail.activities.length > 0 ? (
                   detail.activities.map((activity) => (
-                    <div key={activity.id} className="text-sm text-on-surface-variant">
+                    <div
+                      key={activity.id}
+                      className="text-sm text-on-surface-variant"
+                    >
                       <span className="font-semibold text-on-surface">
                         {formatDateTime(activity.createdAt)}
                       </span>

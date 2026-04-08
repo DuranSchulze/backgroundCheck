@@ -3,6 +3,7 @@
 import type { FormEvent } from "react";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { gooeyToast } from "@/components/ui/goey-toaster";
 
 export const dynamic = "force-dynamic";
 
@@ -19,19 +20,33 @@ export default function AdminLoginPage() {
     setIsSubmitting(true);
 
     try {
-      const response = await fetch("/api/admin/login", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
+      await gooeyToast.promise(
+        (async () => {
+          const response = await fetch("/api/admin/login", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ username, password }),
+          });
+
+          const payload = (await response.json()) as { error?: string };
+
+          if (!response.ok) {
+            throw new Error(payload.error || "Unable to log in.");
+          }
+        })(),
+        {
+          loading: "Signing in...",
+          success: "Access granted",
+          error: "Login failed",
+          description: {
+            success: "Redirecting to the background check operations dashboard.",
+            error:
+              "Please verify the admin username and password configured in your environment.",
+          },
         },
-        body: JSON.stringify({ username, password }),
-      });
-
-      const payload = (await response.json()) as { error?: string };
-
-      if (!response.ok) {
-        throw new Error(payload.error || "Unable to log in.");
-      }
+      );
 
       router.replace("/admin");
       router.refresh();
