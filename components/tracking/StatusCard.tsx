@@ -1,5 +1,5 @@
 import CircularProgress from "@/components/tracking/CircularProgress";
-import Badge from "@/components/ui/Badge";
+import Badge from "@/components/ui/badge";
 
 interface StatusCardProps {
   percent: number;

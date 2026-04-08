@@ -1,5 +1,5 @@
 import { ReactElement } from "react";
-import Badge from "@/components/ui/Badge";
+import Badge from "@/components/ui/badge";
 
 type StepStatus = "completed" | "in-progress" | "queued";
 
