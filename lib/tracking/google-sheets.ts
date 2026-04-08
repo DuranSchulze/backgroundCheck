@@ -1,4 +1,6 @@
 import { createSign } from "node:crypto";
+import { readFile } from "node:fs/promises";
+import path from "node:path";
 import { normalizeReferenceNumber } from "@/lib/tracking/normalize";
 import type { CheckCategory, SheetOrderSnapshot } from "@/lib/tracking/types";
 
@@ -82,25 +84,51 @@ function getHeaderAliases(header: string) {
   return aliases;
 }
 
-function parseServiceAccountCredentials(): GoogleCredentials {
+function parseGoogleCredentialsJson(
+  rawJson: string,
+  sourceLabel: string,
+): GoogleCredentials {
+  const parsed = JSON.parse(rawJson) as {
+    client_email?: string;
+    private_key?: string;
+  };
+
+  if (!parsed.client_email || !parsed.private_key) {
+    throw new GoogleSheetsConfigError(
+      `${sourceLabel} must include client_email and private_key.`,
+    );
+  }
+
+  return {
+    clientEmail: parsed.client_email,
+    privateKey: parsed.private_key,
+  };
+}
+
+async function loadServiceAccountCredentials(): Promise<GoogleCredentials> {
   const rawJson = process.env.GOOGLE_SERVICE_ACCOUNT_JSON?.trim();
 
   if (rawJson) {
-    const parsed = JSON.parse(rawJson) as {
-      client_email?: string;
-      private_key?: string;
-    };
+    return parseGoogleCredentialsJson(rawJson, "GOOGLE_SERVICE_ACCOUNT_JSON");
+  }
 
-    if (!parsed.client_email || !parsed.private_key) {
+  const filePath =
+    process.env.GOOGLE_SERVICE_ACCOUNT_JSON_FILE?.trim() ||
+    path.join(
+      /* turbopackIgnore: true */ process.cwd(),
+      "public",
+      "filepino-bgcheck-cb51fa768a50.json",
+    );
+
+  try {
+    const fileContents = await readFile(filePath, "utf8");
+    return parseGoogleCredentialsJson(fileContents, filePath);
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code !== "ENOENT") {
       throw new GoogleSheetsConfigError(
-        "GOOGLE_SERVICE_ACCOUNT_JSON must include client_email and private_key.",
+        `Unable to read Google service account file at ${filePath}.`,
       );
     }
-
-    return {
-      clientEmail: parsed.client_email,
-      privateKey: parsed.private_key,
-    };
   }
 
   const clientEmail = process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL?.trim();
@@ -111,7 +139,7 @@ function parseServiceAccountCredentials(): GoogleCredentials {
 
   if (!clientEmail || !privateKey) {
     throw new GoogleSheetsConfigError(
-      "Google service account credentials are missing. Set GOOGLE_SERVICE_ACCOUNT_JSON or GOOGLE_SERVICE_ACCOUNT_EMAIL and GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY.",
+      "Google service account credentials are missing. Set GOOGLE_SERVICE_ACCOUNT_JSON, GOOGLE_SERVICE_ACCOUNT_JSON_FILE, or GOOGLE_SERVICE_ACCOUNT_EMAIL and GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY.",
     );
   }
 
@@ -125,7 +153,7 @@ async function fetchGoogleAccessToken() {
     return cachedToken.accessToken;
   }
 
-  const { clientEmail, privateKey } = parseServiceAccountCredentials();
+  const { clientEmail, privateKey } = await loadServiceAccountCredentials();
   const issuedAt = Math.floor(now / 1000);
   const expiresAt = issuedAt + 3600;
 
@@ -180,23 +208,71 @@ async function fetchGoogleAccessToken() {
 
 function getSheetConfig() {
   const spreadsheetId = process.env.GOOGLE_SHEETS_SPREADSHEET_ID?.trim();
-  const range = process.env.GOOGLE_SHEETS_RANGE?.trim();
 
-  if (!spreadsheetId || !range) {
+  if (!spreadsheetId) {
     throw new GoogleSheetsConfigError(
-      "Google Sheets is enabled, but GOOGLE_SHEETS_SPREADSHEET_ID or GOOGLE_SHEETS_RANGE is missing.",
+      "Google Sheets is enabled, but GOOGLE_SHEETS_SPREADSHEET_ID is missing.",
     );
   }
 
-  return { spreadsheetId, range };
+  return {
+    spreadsheetId,
+    range: process.env.GOOGLE_SHEETS_RANGE?.trim() || null,
+  };
+}
+
+async function resolveSheetRange(spreadsheetId: string, accessToken: string) {
+  const configuredRange = process.env.GOOGLE_SHEETS_RANGE?.trim();
+
+  if (configuredRange) {
+    return configuredRange;
+  }
+
+  const metadataUrl = new URL(
+    `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}`,
+  );
+  metadataUrl.searchParams.set("fields", "sheets(properties(title))");
+
+  const response = await fetch(metadataUrl, {
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+    },
+    cache: "no-store",
+  });
+
+  if (!response.ok) {
+    const payload = await response.text();
+    throw new GoogleSheetsDataError(
+      `Unable to resolve the first Google Sheet tab (${response.status}): ${payload}`,
+    );
+  }
+
+  const payload = (await response.json()) as {
+    sheets?: Array<{
+      properties?: {
+        title?: string;
+      };
+    }>;
+  };
+
+  const firstSheetTitle = payload.sheets?.[0]?.properties?.title?.trim();
+
+  if (!firstSheetTitle) {
+    throw new GoogleSheetsDataError(
+      "The configured Google spreadsheet does not have any readable tabs.",
+    );
+  }
+
+  return `${firstSheetTitle}!A:ZZ`;
 }
 
 export async function readSheetRows() {
   const { spreadsheetId, range } = getSheetConfig();
   const accessToken = await fetchGoogleAccessToken();
+  const resolvedRange = range || (await resolveSheetRange(spreadsheetId, accessToken));
 
   const url = new URL(
-    `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${encodeURIComponent(range)}`,
+    `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${encodeURIComponent(resolvedRange)}`,
   );
 
   const response = await fetch(url, {
