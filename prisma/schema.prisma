@@ -1,0 +1,76 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Get a free hosted Postgres database in seconds: `npx create-db`
+
+generator client {
+  provider = "prisma-client"
+  output   = "../lib/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum TrackingStatus {
+  PENDING
+  PROCESSING
+  SHIPPED
+  IN_TRANSIT
+  OUT_FOR_DELIVERY
+  DELIVERED
+  CANCELLED
+}
+
+model Order {
+  id          String  @id @default(cuid())
+  reference   String  @unique
+  description String? @db.Text
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  tracking TrackingRecord?
+}
+
+model TrackingRecord {
+  id      String         @id @default(cuid())
+  orderId String         @unique
+  status  TrackingStatus @default(PENDING)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  order  Order          @relation(fields: [orderId], references: [id])
+  logs   TrackingLog[]
+  checks CheckProcess[]
+}
+
+model TrackingLog {
+  id         String         @id @default(cuid())
+  trackingId String
+  status     TrackingStatus
+  notes      String?        @db.Text
+
+  createdAt DateTime @default(now())
+
+  tracking TrackingRecord @relation(fields: [trackingId], references: [id])
+
+  @@index([trackingId])
+}
+
+model CheckProcess {
+  id         String  @id @default(cuid())
+  trackingId String
+  status     String
+  notes      String? @db.Text
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  tracking TrackingRecord @relation(fields: [trackingId], references: [id])
+
+  @@index([trackingId])
+}
