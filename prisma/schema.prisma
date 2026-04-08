@@ -1,8 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Get a free hosted Postgres database in seconds: `npx create-db`
-
 generator client {
   provider = "prisma-client"
   output   = "../lib/generated/prisma"
@@ -12,65 +7,66 @@ datasource db {
   provider = "postgresql"
 }
 
-enum TrackingStatus {
-  PENDING
-  PROCESSING
-  SHIPPED
-  IN_TRANSIT
-  OUT_FOR_DELIVERY
-  DELIVERED
-  CANCELLED
+enum ProgressStatus {
+  QUEUED
+  IN_PROGRESS
+  ACTIVE_INVESTIGATION
+  COMPLETED
+  ON_HOLD
 }
 
-model Order {
-  id          String  @id @default(cuid())
-  reference   String  @unique
-  description String? @db.Text
+enum CheckCategory {
+  IDENTITY_CHECKS
+  VERIFICATION_SERVICES
+  LEGAL_IMMIGRATION_CHECKS
+  CORPORATE_FINANCIAL_CHECKS
+  SPECIALIZED_CHECKS
+}
+
+model OrderProgress {
+  id            String         @id @default(cuid())
+  trackingNumber String        @unique
+  overallStatus ProgressStatus @default(QUEUED)
+  summary       String?        @db.Text
+  etaLabel      String?
+  adminNotes    String?        @db.Text
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  // Relations
-  tracking TrackingRecord?
+  checks     CheckTypeProgress[]
+  activities ProgressActivity[]
+
+  @@index([overallStatus])
 }
 
-model TrackingRecord {
-  id      String         @id @default(cuid())
-  orderId String         @unique
-  status  TrackingStatus @default(PENDING)
+model CheckTypeProgress {
+  id              String         @id @default(cuid())
+  orderProgressId String
+  checkType       CheckCategory
+  status          ProgressStatus @default(QUEUED)
+  timelineLabel   String?
+  notes           String?        @db.Text
+  sortOrder       Int?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  // Relations
-  order  Order          @relation(fields: [orderId], references: [id])
-  logs   TrackingLog[]
-  checks CheckProcess[]
+  orderProgress OrderProgress @relation(fields: [orderProgressId], references: [id], onDelete: Cascade)
+
+  @@unique([orderProgressId, checkType])
+  @@index([orderProgressId])
+  @@index([checkType])
 }
 
-model TrackingLog {
-  id         String         @id @default(cuid())
-  trackingId String
-  status     TrackingStatus
-  notes      String?        @db.Text
+model ProgressActivity {
+  id              String   @id @default(cuid())
+  orderProgressId String
+  message         String   @db.Text
+  highlight       String?
+  createdAt       DateTime @default(now())
 
-  createdAt DateTime @default(now())
+  orderProgress OrderProgress @relation(fields: [orderProgressId], references: [id], onDelete: Cascade)
 
-  tracking TrackingRecord @relation(fields: [trackingId], references: [id])
-
-  @@index([trackingId])
-}
-
-model CheckProcess {
-  id         String  @id @default(cuid())
-  trackingId String
-  status     String
-  notes      String? @db.Text
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  tracking TrackingRecord @relation(fields: [trackingId], references: [id])
-
-  @@index([trackingId])
+  @@index([orderProgressId, createdAt])
 }

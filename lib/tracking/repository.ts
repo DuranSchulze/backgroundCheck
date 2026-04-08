@@ -1,5 +1,12 @@
 import { mockTrackingRecords } from "@/lib/tracking/mock-data";
+import {
+  GoogleSheetsConfigError,
+  findOrderRowByTrackingNumber,
+  listSheetOrderSnapshots,
+} from "@/lib/tracking/google-sheets";
+import { buildTrackingRecord, buildTrackingSample } from "@/lib/tracking/format";
 import { normalizeReferenceNumber } from "@/lib/tracking/normalize";
+import { getOrderProgressByTrackingNumber } from "@/lib/tracking/progress";
 import type { TrackingRecord, TrackingSample } from "@/lib/tracking/types";
 
 type DataSource = "mock" | "google-sheets";
@@ -36,109 +43,38 @@ function listMockSamples() {
   return mockTrackingRecords.map(mapToSample);
 }
 
-async function fetchGoogleSheetRows() {
-  const spreadsheetId = process.env.GOOGLE_SHEETS_SPREADSHEET_ID;
-  const range = process.env.GOOGLE_SHEETS_RANGE;
-  const accessToken = process.env.GOOGLE_SHEETS_ACCESS_TOKEN;
-  const apiKey = process.env.GOOGLE_SHEETS_API_KEY;
-
-  if (!spreadsheetId || !range) {
-    throw new TrackingConfigError(
-      "Google Sheets is enabled, but GOOGLE_SHEETS_SPREADSHEET_ID or GOOGLE_SHEETS_RANGE is missing.",
-    );
-  }
-
-  if (!accessToken && !apiKey) {
-    throw new TrackingConfigError(
-      "Google Sheets is enabled, but no GOOGLE_SHEETS_ACCESS_TOKEN or GOOGLE_SHEETS_API_KEY is configured.",
-    );
-  }
-
-  const url = new URL(
-    `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${encodeURIComponent(range)}`,
-  );
-
-  if (apiKey) {
-    url.searchParams.set("key", apiKey);
-  }
-
-  const response = await fetch(url, {
-    headers: accessToken
-      ? {
-          Authorization: `Bearer ${accessToken}`,
-        }
-      : undefined,
-    cache: "no-store",
-  });
-
-  if (!response.ok) {
-    throw new Error(`Google Sheets request failed with status ${response.status}.`);
-  }
-
-  const payload = (await response.json()) as { values?: string[][] };
-  return payload.values ?? [];
-}
-
-function parseJsonCell<T>(value: string, fallback: T): T {
-  if (!value) {
-    return fallback;
-  }
-
-  try {
-    return JSON.parse(value) as T;
-  } catch {
-    return fallback;
-  }
-}
-
-function parseGoogleSheetRecords(values: string[][]): TrackingRecord[] {
-  if (values.length <= 1) {
-    return [];
-  }
-
-  const [headerRow, ...rows] = values;
-  const headers = headerRow.map((value) => value.trim());
-
-  return rows
-    .map((row) => {
-      const get = (columnName: string) => {
-        const index = headers.indexOf(columnName);
-        return index >= 0 ? row[index] ?? "" : "";
-      };
-
-      const record: TrackingRecord = {
-        referenceNumber: get("referenceNumber"),
-        status: (get("status") || "queued") as TrackingRecord["status"],
-        title: get("title"),
-        expectedCompletion: get("expectedCompletion"),
-        percent: Number(get("percent") || 0),
-        summary: get("summary"),
-        metadataFields: parseJsonCell(get("metadataFields"), []),
-        pipelineSteps: parseJsonCell(get("pipelineSteps"), []),
-        recentActivity: parseJsonCell(get("recentActivity"), []),
-      };
-
-      return record.referenceNumber ? record : null;
-    })
-    .filter((record): record is TrackingRecord => record !== null);
-}
-
 async function findGoogleSheetsRecord(referenceNumber: string) {
-  const normalizedReference = normalizeReferenceNumber(referenceNumber);
-  const rows = await fetchGoogleSheetRows();
-  const records = parseGoogleSheetRecords(rows);
+  const order = await findOrderRowByTrackingNumber(referenceNumber);
 
-  return (
-    records.find(
-      (record) =>
-        normalizeReferenceNumber(record.referenceNumber) === normalizedReference,
-    ) ?? null
-  );
+  if (!order) {
+    return null;
+  }
+
+  const progressData = await getOrderProgressByTrackingNumber(order.trackingNumber);
+
+  return buildTrackingRecord({
+    order,
+    progress: progressData.progress,
+    checks: progressData.checks,
+    activities: progressData.activities,
+  });
 }
 
 async function listGoogleSheetsSamples() {
-  const rows = await fetchGoogleSheetRows();
-  return parseGoogleSheetRecords(rows).map(mapToSample);
+  const orders = await listSheetOrderSnapshots();
+
+  const samples = await Promise.all(
+    orders.slice(0, 10).map(async (order) => {
+      const progressData = await getOrderProgressByTrackingNumber(order.trackingNumber);
+
+      return buildTrackingSample({
+        order,
+        progress: progressData.progress,
+      });
+    }),
+  );
+
+  return samples;
 }
 
 export async function findTrackingRecord(referenceNumber: string) {
@@ -154,5 +90,9 @@ export async function listTrackingSamples() {
 }
 
 export function isTrackingConfigError(error: unknown): error is TrackingConfigError {
-  return error instanceof TrackingConfigError;
+  return (
+    error instanceof TrackingConfigError || error instanceof GoogleSheetsConfigError
+  );
 }
+
+export { TrackingConfigError };
