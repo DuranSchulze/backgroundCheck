@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import { clearAdminSession, isAdminAuthenticated } from "@/lib/admin-auth";
 import { listSheetOrderSnapshots } from "@/lib/tracking/google-sheets";
@@ -122,6 +123,7 @@ export default async function AdminPage() {
                     <th className="px-6 py-4">Subject Email</th>
                     <th className="px-6 py-4">Subject Name</th>
                     <th className="px-6 py-4">Purpose</th>
+                    <th className="px-6 py-4">Action</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-amber-50">
@@ -141,6 +143,14 @@ export default async function AdminPage() {
                       </td>
                       <td className="px-6 py-4 text-sm text-on-surface-variant">
                         {row.purpose || "Not provided"}
+                      </td>
+                      <td className="px-6 py-4">
+                        <Link
+                          href={`/admin/orders/${encodeURIComponent(row.trackingNumber)}`}
+                          className="inline-flex rounded-full border border-[#f0ca52] bg-primary px-4 py-2 text-xs font-bold uppercase tracking-[0.18em] text-[color:var(--color-on-primary)] transition-colors hover:bg-primary-container"
+                        >
+                          View Details
+                        </Link>
                       </td>
                     </tr>
                   ))}
