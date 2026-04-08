@@ -143,7 +143,7 @@ export function buildPipelineSteps(
       ? checks
       : order.selectedCheckCategories.map((checkType, index) => ({
           id: `generated-${checkType}`,
-          checkType,
+          checkName: getCheckCategoryLabel(checkType),
           status: "QUEUED" as const,
           timelineLabel: null,
           notes: null,
@@ -154,7 +154,7 @@ export function buildPipelineSteps(
 
   return selectedChecks.map((check) => ({
     id: check.id,
-    title: getCheckCategoryLabel(check.checkType),
+    title: check.checkName,
     description:
       check.notes ||
       check.timelineLabel ||

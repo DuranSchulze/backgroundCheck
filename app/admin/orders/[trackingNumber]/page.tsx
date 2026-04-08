@@ -2,12 +2,8 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { isAdminAuthenticated } from "@/lib/admin-auth";
 import { getAdminTrackingDetail } from "@/lib/tracking/admin";
-import {
-  getCheckCategoryLabel,
-  getCheckedColumnDetails,
-  stripColumnSuffix,
-} from "@/lib/tracking/format";
-import Badge from "@/components/ui/badge";
+import { stripColumnSuffix } from "@/lib/tracking/format";
+import ServiceCheckList from "@/components/admin/ServiceCheckList";
 
 export const dynamic = "force-dynamic";
 
@@ -52,8 +48,6 @@ export default async function OrderDetailPage({
   } catch {
     notFound();
   }
-
-  const checkDetails = getCheckedColumnDetails(detail.order.rawFields);
 
   const rawEntries = Object.entries(detail.order.rawFields).filter(
     ([, value]) => value.trim().length > 0,
@@ -128,32 +122,18 @@ export default async function OrderDetailPage({
           <section className="space-y-6">
             <div className="rounded-[2rem] border border-amber-200 bg-white p-6 shadow-[0_18px_60px_rgba(66,44,0,0.06)]">
               <h2 className="font-headline text-xl font-bold text-on-surface">
-                Checks Needed
+                Service Checks
               </h2>
               <p className="mt-2 text-sm text-on-surface-variant">
-                Derived from the checkbox columns in the Google Sheet.
+                Manage the status and notes for each service check on this
+                order.
               </p>
-
-              <div className="mt-5 flex flex-wrap gap-3">
-                {checkDetails.length > 0 ? (
-                  checkDetails.map((check) => (
-                    <div
-                      key={check.label}
-                      className="inline-flex flex-col gap-1 rounded-2xl border border-primary-fixed-dim bg-primary-fixed px-4 py-2.5"
-                    >
-                      <Badge status="processing" label={check.label} />
-                      <span className="text-[11px] font-medium text-on-surface-variant">
-                        {check.value.replace(/-/g, " ").replace(/–/g, "–")}
-                      </span>
-                    </div>
-                  ))
-                ) : (
-                  <p className="text-sm text-on-surface-variant">
-                    No checkbox-based checks were selected on the Google Sheet
-                    row.
-                  </p>
-                )}
-              </div>
+              <ServiceCheckList
+                key={detail.checks.map((c) => c.id).join(",")}
+                trackingNumber={detail.order.trackingNumber}
+                initialChecks={detail.checks}
+                rawFields={detail.order.rawFields}
+              />
             </div>
 
             <div className="rounded-[2rem] border border-amber-200 bg-white p-6 shadow-[0_18px_60px_rgba(66,44,0,0.06)]">
@@ -213,7 +193,7 @@ export default async function OrderDetailPage({
                   >
                     <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
                       <p className="font-semibold text-on-surface">
-                        {getCheckCategoryLabel(check.checkType)}
+                        {check.checkName}
                       </p>
                       <span className="text-[11px] font-bold uppercase tracking-[0.18em] text-outline">
                         {formatStatus(check.status)}

@@ -15,21 +15,13 @@ enum ProgressStatus {
   ON_HOLD
 }
 
-enum CheckCategory {
-  IDENTITY_CHECKS
-  VERIFICATION_SERVICES
-  LEGAL_IMMIGRATION_CHECKS
-  CORPORATE_FINANCIAL_CHECKS
-  SPECIALIZED_CHECKS
-}
-
 model OrderProgress {
-  id            String         @id @default(cuid())
-  trackingNumber String        @unique
-  overallStatus ProgressStatus @default(QUEUED)
-  summary       String?        @db.Text
-  etaLabel      String?
-  adminNotes    String?        @db.Text
+  id             String         @id @default(cuid())
+  trackingNumber String         @unique
+  overallStatus  ProgressStatus @default(QUEUED)
+  summary        String?        @db.Text
+  etaLabel       String?
+  adminNotes     String?        @db.Text
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -43,7 +35,7 @@ model OrderProgress {
 model CheckTypeProgress {
   id              String         @id @default(cuid())
   orderProgressId String
-  checkType       CheckCategory
+  checkName       String
   status          ProgressStatus @default(QUEUED)
   timelineLabel   String?
   notes           String?        @db.Text
@@ -54,9 +46,8 @@ model CheckTypeProgress {
 
   orderProgress OrderProgress @relation(fields: [orderProgressId], references: [id], onDelete: Cascade)
 
-  @@unique([orderProgressId, checkType])
+  @@unique([orderProgressId, checkName])
   @@index([orderProgressId])
-  @@index([checkType])
 }
 
 model ProgressActivity {

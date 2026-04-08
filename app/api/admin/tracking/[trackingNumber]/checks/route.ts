@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import {
   AdminTrackingError,
-  upsertCheckProgress,
+  updateServiceCheck,
 } from "@/lib/tracking/admin";
 
 type RouteContext = {
@@ -14,8 +14,11 @@ export async function PUT(request: Request, context: RouteContext) {
   const { trackingNumber } = await context.params;
 
   try {
-    const payload = (await request.json()) as unknown;
-    const detail = await upsertCheckProgress(trackingNumber, payload);
+    const body = (await request.json()) as { checkId: string; status?: string; notes?: string };
+    const detail = await updateServiceCheck(trackingNumber, body.checkId, {
+      status: body.status,
+      notes: body.notes,
+    });
     return NextResponse.json({ detail });
   } catch (error) {
     const status = error instanceof AdminTrackingError ? 400 : 500;

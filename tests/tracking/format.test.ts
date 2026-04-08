@@ -61,7 +61,7 @@ test("buildTrackingRecord merges overall progress, check progress, and activitie
   const checks: CheckProgressView[] = [
     {
       id: "check-1",
-      checkType: "IDENTITY_CHECKS",
+      checkName: "Individual & Identity Checks",
       status: "COMPLETED",
       timelineLabel: "Completed Apr 1",
       notes: "Identity packet verified.",
@@ -71,7 +71,7 @@ test("buildTrackingRecord merges overall progress, check progress, and activitie
     },
     {
       id: "check-2",
-      checkType: "VERIFICATION_SERVICES",
+      checkName: "Verification Services",
       status: "ACTIVE_INVESTIGATION",
       timelineLabel: "Expected Apr 12",
       notes: "Employer outreach in progress.",

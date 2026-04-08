@@ -1,33 +1,15 @@
-import { CheckCategory, ProgressStatus } from "@/lib/generated/prisma/enums";
+import { ProgressStatus } from "@/lib/generated/prisma/enums";
 import { prisma } from "@/lib/prisma";
 import type {
   CheckProgressStatus,
   CheckProgressView,
-  CheckCategory as CheckCategoryValue,
   OrderProgressSummary,
   ProgressActivityView,
   SheetOrderSnapshot,
 } from "@/lib/tracking/types";
 
-const CHECK_CATEGORY_ORDER: CheckCategoryValue[] = [
-  "IDENTITY_CHECKS",
-  "VERIFICATION_SERVICES",
-  "LEGAL_IMMIGRATION_CHECKS",
-  "CORPORATE_FINANCIAL_CHECKS",
-  "SPECIALIZED_CHECKS",
-];
-
-function toPrismaCheckCategory(value: CheckCategoryValue) {
-  return CheckCategory[value];
-}
-
 function toCheckProgressStatus(value: ProgressStatus): CheckProgressStatus {
   return value;
-}
-
-export function getCheckCategorySortOrder(checkType: CheckCategoryValue) {
-  const index = CHECK_CATEGORY_ORDER.indexOf(checkType);
-  return index >= 0 ? index : CHECK_CATEGORY_ORDER.length;
 }
 
 function mapProgressSummary(
@@ -59,7 +41,7 @@ function mapProgressSummary(
 function mapCheck(
   check: {
     id: string;
-    checkType: CheckCategory;
+    checkName: string;
     status: ProgressStatus;
     timelineLabel: string | null;
     notes: string | null;
@@ -70,7 +52,7 @@ function mapCheck(
 ): CheckProgressView {
   return {
     id: check.id,
-    checkType: check.checkType,
+    checkName: check.checkName,
     status: toCheckProgressStatus(check.status),
     timelineLabel: check.timelineLabel,
     notes: check.notes,
@@ -117,36 +99,11 @@ export async function getOrderProgressByTrackingNumber(trackingNumber: string) {
 }
 
 export async function ensureOrderProgressForSnapshot(order: SheetOrderSnapshot) {
-  const progress = await prisma.orderProgress.upsert({
+  await prisma.orderProgress.upsert({
     where: { trackingNumber: order.trackingNumber },
-    create: {
-      trackingNumber: order.trackingNumber,
-    },
+    create: { trackingNumber: order.trackingNumber },
     update: {},
   });
-
-  if (order.selectedCheckCategories.length > 0) {
-    await Promise.all(
-      order.selectedCheckCategories.map((checkType) =>
-        prisma.checkTypeProgress.upsert({
-          where: {
-            orderProgressId_checkType: {
-              orderProgressId: progress.id,
-              checkType: toPrismaCheckCategory(checkType),
-            },
-          },
-          create: {
-            orderProgressId: progress.id,
-            checkType: toPrismaCheckCategory(checkType),
-            sortOrder: getCheckCategorySortOrder(checkType),
-          },
-          update: {
-            sortOrder: getCheckCategorySortOrder(checkType),
-          },
-        }),
-      ),
-    );
-  }
 
   return getOrderProgressByTrackingNumber(order.trackingNumber);
 }

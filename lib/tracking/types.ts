@@ -92,7 +92,7 @@ export interface OrderProgressSummary {
 
 export interface CheckProgressView {
   id: string;
-  checkType: CheckCategory;
+  checkName: string;
   status: CheckProgressStatus;
   timelineLabel: string | null;
   notes: string | null;

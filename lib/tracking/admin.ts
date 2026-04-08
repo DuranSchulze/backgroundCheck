@@ -1,14 +1,12 @@
-import { CheckCategory, ProgressStatus } from "@/lib/generated/prisma/enums";
+import { ProgressStatus } from "@/lib/generated/prisma/enums";
 import { prisma } from "@/lib/prisma";
 import { findOrderRowByTrackingNumber } from "@/lib/tracking/google-sheets";
-import { buildTrackingRecord } from "@/lib/tracking/format";
+import { buildTrackingRecord, getCheckedColumnDetails } from "@/lib/tracking/format";
 import {
   ensureOrderProgressForSnapshot,
-  getCheckCategorySortOrder,
   getOrderProgressByTrackingNumber,
 } from "@/lib/tracking/progress";
 import type {
-  CheckCategory as CheckCategoryValue,
   CheckProgressStatus,
   OrderProgressView,
 } from "@/lib/tracking/types";
@@ -23,16 +21,6 @@ function parseProgressStatus(value: unknown) {
   }
 
   return value as CheckProgressStatus;
-}
-
-function parseCheckCategory(value: unknown) {
-  if (typeof value !== "string" || !(value in CheckCategory)) {
-    throw new AdminTrackingError(
-      "checkType must be one of the configured background-check categories.",
-    );
-  }
-
-  return value as CheckCategoryValue;
 }
 
 async function getRequiredOrder(trackingNumber: string) {
@@ -66,15 +54,37 @@ export async function getAdminTrackingDetail(
   const order = await getRequiredOrder(trackingNumber);
   const progressData = await ensureOrderProgressForSnapshot(order);
 
+  let checks = progressData.checks;
+
+  if (checks.length === 0) {
+    const checkDetails = getCheckedColumnDetails(order.rawFields);
+    if (checkDetails.length > 0) {
+      const orderProgressId = await getProgressIdByTrackingNumber(order.trackingNumber);
+      await Promise.all(
+        checkDetails.map((check, index) =>
+          prisma.checkTypeProgress.upsert({
+            where: {
+              orderProgressId_checkName: { orderProgressId, checkName: check.label },
+            },
+            create: { orderProgressId, checkName: check.label, sortOrder: index },
+            update: {},
+          }),
+        ),
+      );
+      const refreshed = await getOrderProgressByTrackingNumber(order.trackingNumber);
+      checks = refreshed.checks;
+    }
+  }
+
   return {
     order,
     progress: progressData.progress,
-    checks: progressData.checks,
+    checks,
     activities: progressData.activities,
     trackerRecord: buildTrackingRecord({
       order,
       progress: progressData.progress,
-      checks: progressData.checks,
+      checks,
       activities: progressData.activities,
     }),
   };
@@ -109,54 +119,84 @@ export async function upsertOverallProgress(
   return getAdminTrackingDetail(order.trackingNumber);
 }
 
-export async function upsertCheckProgress(
-  trackingNumber: string,
-  payload: unknown,
-) {
-  if (!payload || typeof payload !== "object") {
-    throw new AdminTrackingError("Check progress payload must be a JSON object.");
-  }
-
-  const body = payload as Record<string, unknown>;
+export async function initializeChecksFromSheet(trackingNumber: string) {
   const order = await getRequiredOrder(trackingNumber);
-  const progressData = await ensureOrderProgressForSnapshot(order);
-
-  if (!progressData.progress) {
-    throw new AdminTrackingError("Unable to initialize order progress for this tracking number.");
-  }
-
-  const checkType = parseCheckCategory(body.checkType);
+  await ensureOrderProgressForSnapshot(order);
   const orderProgressId = await getProgressIdByTrackingNumber(order.trackingNumber);
 
-  await prisma.checkTypeProgress.upsert({
-    where: {
-      orderProgressId_checkType: {
-        orderProgressId,
-        checkType,
-      },
-    },
-    create: {
-      orderProgressId,
-      checkType,
+  const checkDetails = getCheckedColumnDetails(order.rawFields);
+
+  if (checkDetails.length === 0) {
+    throw new AdminTrackingError(
+      "No checkbox columns with selected values found in the Google Sheet row.",
+    );
+  }
+
+  await Promise.all(
+    checkDetails.map((check, index) =>
+      prisma.checkTypeProgress.upsert({
+        where: {
+          orderProgressId_checkName: {
+            orderProgressId,
+            checkName: check.label,
+          },
+        },
+        create: {
+          orderProgressId,
+          checkName: check.label,
+          sortOrder: index,
+        },
+        update: {},
+      }),
+    ),
+  );
+
+  return getAdminTrackingDetail(order.trackingNumber);
+}
+
+export async function updateServiceCheck(
+  trackingNumber: string,
+  checkId: string,
+  payload: { status?: string; notes?: string },
+) {
+  const order = await getRequiredOrder(trackingNumber);
+  const orderProgressId = await getProgressIdByTrackingNumber(order.trackingNumber);
+
+  const existing = await prisma.checkTypeProgress.findFirst({
+    where: { id: checkId, orderProgressId },
+  });
+
+  if (!existing) {
+    throw new AdminTrackingError("Service check record not found.");
+  }
+
+  await prisma.checkTypeProgress.update({
+    where: { id: checkId },
+    data: {
       status:
-        body.status === undefined ? "QUEUED" : parseProgressStatus(body.status),
-      timelineLabel:
-        typeof body.timelineLabel === "string" ? body.timelineLabel : null,
-      notes: typeof body.notes === "string" ? body.notes : null,
-      sortOrder:
-        typeof body.sortOrder === "number"
-          ? body.sortOrder
-          : getCheckCategorySortOrder(checkType),
-    },
-    update: {
-      status: body.status === undefined ? undefined : parseProgressStatus(body.status),
-      timelineLabel:
-        typeof body.timelineLabel === "string" ? body.timelineLabel : undefined,
-      notes: typeof body.notes === "string" ? body.notes : undefined,
-      sortOrder:
-        typeof body.sortOrder === "number" ? body.sortOrder : undefined,
+        payload.status !== undefined ? parseProgressStatus(payload.status) : undefined,
+      notes: payload.notes !== undefined ? payload.notes : undefined,
     },
   });
+
+  return getAdminTrackingDetail(order.trackingNumber);
+}
+
+export async function reorderServiceChecks(
+  trackingNumber: string,
+  orderedIds: string[],
+) {
+  const order = await getRequiredOrder(trackingNumber);
+  const orderProgressId = await getProgressIdByTrackingNumber(order.trackingNumber);
+
+  await Promise.all(
+    orderedIds.map((id, index) =>
+      prisma.checkTypeProgress.updateMany({
+        where: { id, orderProgressId },
+        data: { sortOrder: index },
+      }),
+    ),
+  );
 
   return getAdminTrackingDetail(order.trackingNumber);
 }
@@ -191,6 +231,34 @@ export async function appendProgressActivity(
   });
 
   return getAdminTrackingDetail(order.trackingNumber);
+}
+
+export async function getServiceCheckById(
+  trackingNumber: string,
+  checkId: string,
+) {
+  const order = await getRequiredOrder(trackingNumber);
+  const orderProgressId = await getProgressIdByTrackingNumber(order.trackingNumber);
+
+  const check = await prisma.checkTypeProgress.findFirst({
+    where: { id: checkId, orderProgressId },
+  });
+
+  if (!check) {
+    throw new AdminTrackingError("Service check not found.");
+  }
+
+  return {
+    id: check.id,
+    checkName: check.checkName,
+    status: check.status as import("@/lib/tracking/types").CheckProgressStatus,
+    notes: check.notes,
+    timelineLabel: check.timelineLabel,
+    sortOrder: check.sortOrder,
+    createdAt: check.createdAt.toISOString(),
+    updatedAt: check.updatedAt.toISOString(),
+    trackingNumber: order.trackingNumber,
+  };
 }
 
 export async function getProgressOnly(trackingNumber: string) {
