@@ -7,6 +7,7 @@ import {
   AdminTrackingError,
 } from "@/lib/tracking/admin";
 import ServiceCheckEditor from "@/components/admin/ServiceCheckEditor";
+import CheckTaskList from "@/components/admin/CheckTaskList";
 
 export const dynamic = "force-dynamic";
 
@@ -17,7 +18,9 @@ type CheckDetailPageProps = {
   }>;
 };
 
-export default async function CheckDetailPage({ params }: CheckDetailPageProps) {
+export default async function CheckDetailPage({
+  params,
+}: CheckDetailPageProps) {
   const isAuthenticated = await isAdminAuthenticated();
   if (!isAuthenticated) redirect("/admin/login");
 
@@ -93,6 +96,24 @@ export default async function CheckDetailPage({ params }: CheckDetailPageProps) 
           />
         </div>
 
+        <div className="rounded-[2rem] border border-amber-200 bg-white p-8 shadow-[0_18px_60px_rgba(66,44,0,0.06)]">
+          <h2 className="font-headline text-xl font-bold text-on-surface">
+            Tasks
+          </h2>
+          <p className="mt-1 text-sm text-on-surface-variant">
+            Break this check into smaller tasks. Set each task&apos;s status and
+            add notes.
+          </p>
+          <div className="mt-6">
+            <CheckTaskList
+              key={check.tasks.map((t) => t.id).join(",")}
+              trackingNumber={trackingNumber}
+              checkId={check.id}
+              initialTasks={check.tasks}
+            />
+          </div>
+        </div>
+
         {allCheckIds.length > 1 ? (
           <div className="flex items-center justify-between">
             {currentIndex > 0 ? (
@@ -100,8 +121,17 @@ export default async function CheckDetailPage({ params }: CheckDetailPageProps) 
                 href={`${orderHref}/checks/${allCheckIds[currentIndex - 1]}`}
                 className="inline-flex items-center gap-1.5 text-sm font-semibold text-outline transition hover:text-on-surface"
               >
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4">
-                  <path fillRule="evenodd" d="M17 10a.75.75 0 0 1-.75.75H5.612l4.158 3.96a.75.75 0 1 1-1.04 1.08l-5.5-5.25a.75.75 0 0 1 0-1.08l5.5-5.25a.75.75 0 1 1 1.04 1.08L5.612 9.25H16.25A.75.75 0 0 1 17 10Z" clipRule="evenodd" />
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  viewBox="0 0 20 20"
+                  fill="currentColor"
+                  className="h-4 w-4"
+                >
+                  <path
+                    fillRule="evenodd"
+                    d="M17 10a.75.75 0 0 1-.75.75H5.612l4.158 3.96a.75.75 0 1 1-1.04 1.08l-5.5-5.25a.75.75 0 0 1 0-1.08l5.5-5.25a.75.75 0 1 1 1.04 1.08L5.612 9.25H16.25A.75.75 0 0 1 17 10Z"
+                    clipRule="evenodd"
+                  />
                 </svg>
                 Previous check
               </Link>
@@ -114,8 +144,17 @@ export default async function CheckDetailPage({ params }: CheckDetailPageProps) 
                 className="inline-flex items-center gap-1.5 text-sm font-semibold text-outline transition hover:text-on-surface"
               >
                 Next check
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4">
-                  <path fillRule="evenodd" d="M3 10a.75.75 0 0 1 .75-.75h10.638L10.23 5.29a.75.75 0 1 1 1.04-1.08l5.5 5.25a.75.75 0 0 1 0 1.08l-5.5 5.25a.75.75 0 1 1-1.04-1.08l4.158-3.96H3.75A.75.75 0 0 1 3 10Z" clipRule="evenodd" />
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  viewBox="0 0 20 20"
+                  fill="currentColor"
+                  className="h-4 w-4"
+                >
+                  <path
+                    fillRule="evenodd"
+                    d="M3 10a.75.75 0 0 1 .75-.75h10.638L10.23 5.29a.75.75 0 1 1 1.04-1.08l5.5 5.25a.75.75 0 0 1 0 1.08l-5.5 5.25a.75.75 0 1 1-1.04-1.08l4.158-3.96H3.75A.75.75 0 0 1 3 10Z"
+                    clipRule="evenodd"
+                  />
                 </svg>
               </Link>
             ) : (

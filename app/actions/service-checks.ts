@@ -5,6 +5,10 @@ import {
   initializeChecksFromSheet,
   updateServiceCheck,
   reorderServiceChecks,
+  createCheckTask,
+  updateCheckTask,
+  deleteCheckTask,
+  reorderCheckTasks,
   AdminTrackingError,
 } from "@/lib/tracking/admin";
 
@@ -53,4 +57,65 @@ export async function actionReorderServiceChecks(
     throw err;
   }
   revalidatePath(orderPath(trackingNumber));
+}
+
+function checkPath(trackingNumber: string, checkId: string) {
+  return `/admin/orders/${encodeURIComponent(trackingNumber)}/checks/${checkId}`;
+}
+
+export async function actionCreateCheckTask(
+  trackingNumber: string,
+  checkId: string,
+  title: string,
+) {
+  try {
+    await createCheckTask(trackingNumber, checkId, title);
+  } catch (err) {
+    if (err instanceof AdminTrackingError) return { error: err.message };
+    throw err;
+  }
+  revalidatePath(checkPath(trackingNumber, checkId));
+}
+
+export async function actionUpdateCheckTask(
+  trackingNumber: string,
+  checkId: string,
+  taskId: string,
+  payload: { status?: string; notes?: string; title?: string },
+) {
+  try {
+    await updateCheckTask(trackingNumber, checkId, taskId, payload);
+  } catch (err) {
+    if (err instanceof AdminTrackingError) return { error: err.message };
+    throw err;
+  }
+  revalidatePath(checkPath(trackingNumber, checkId));
+}
+
+export async function actionDeleteCheckTask(
+  trackingNumber: string,
+  checkId: string,
+  taskId: string,
+) {
+  try {
+    await deleteCheckTask(trackingNumber, checkId, taskId);
+  } catch (err) {
+    if (err instanceof AdminTrackingError) return { error: err.message };
+    throw err;
+  }
+  revalidatePath(checkPath(trackingNumber, checkId));
+}
+
+export async function actionReorderCheckTasks(
+  trackingNumber: string,
+  checkId: string,
+  orderedIds: string[],
+) {
+  try {
+    await reorderCheckTasks(trackingNumber, checkId, orderedIds);
+  } catch (err) {
+    if (err instanceof AdminTrackingError) return { error: err.message };
+    throw err;
+  }
+  revalidatePath(checkPath(trackingNumber, checkId));
 }

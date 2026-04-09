@@ -45,9 +45,26 @@ model CheckTypeProgress {
   updatedAt DateTime @updatedAt
 
   orderProgress OrderProgress @relation(fields: [orderProgressId], references: [id], onDelete: Cascade)
+  tasks         CheckTask[]
 
   @@unique([orderProgressId, checkName])
   @@index([orderProgressId])
+}
+
+model CheckTask {
+  id                  String         @id @default(cuid())
+  checkTypeProgressId String
+  title               String
+  status              ProgressStatus @default(QUEUED)
+  notes               String?        @db.Text
+  sortOrder           Int?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  checkTypeProgress CheckTypeProgress @relation(fields: [checkTypeProgressId], references: [id], onDelete: Cascade)
+
+  @@index([checkTypeProgressId])
 }
 
 model ProgressActivity {

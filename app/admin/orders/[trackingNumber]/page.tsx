@@ -2,7 +2,7 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { isAdminAuthenticated } from "@/lib/admin-auth";
 import { getAdminTrackingDetail } from "@/lib/tracking/admin";
-import { stripColumnSuffix } from "@/lib/tracking/format";
+import GoogleSheetDataDialog from "@/components/admin/GoogleSheetDataDialog";
 import ServiceCheckList from "@/components/admin/ServiceCheckList";
 
 export const dynamic = "force-dynamic";
@@ -119,7 +119,7 @@ export default async function OrderDetailPage({
         </div>
 
         <div className="grid gap-6 xl:grid-cols-[0.95fr_1.05fr]">
-          <section className="space-y-6">
+          <section>
             <div className="rounded-[2rem] border border-amber-200 bg-white p-6 shadow-[0_18px_60px_rgba(66,44,0,0.06)]">
               <h2 className="font-headline text-xl font-bold text-on-surface">
                 Service Checks
@@ -135,173 +135,81 @@ export default async function OrderDetailPage({
                 rawFields={detail.order.rawFields}
               />
             </div>
-
-            <div className="rounded-[2rem] border border-amber-200 bg-white p-6 shadow-[0_18px_60px_rgba(66,44,0,0.06)]">
-              <h2 className="font-headline text-xl font-bold text-on-surface">
-                Database Progress Snapshot
-              </h2>
-              <p className="mt-2 text-sm text-on-surface-variant">
-                These records come from Prisma and are initialized when this
-                page is opened.
-              </p>
-
-              <div className="mt-5 grid gap-4 md:grid-cols-2">
-                <div className="rounded-[1.2rem] border border-amber-100 bg-[#fffaf0] p-4">
-                  <div className="text-[11px] font-bold uppercase tracking-[0.2em] text-outline">
-                    Summary
-                  </div>
-                  <p className="mt-2 text-sm text-on-surface-variant">
-                    {detail.progress?.summary || "No summary saved yet."}
-                  </p>
-                </div>
-
-                <div className="rounded-[1.2rem] border border-amber-100 bg-[#fffaf0] p-4">
-                  <div className="text-[11px] font-bold uppercase tracking-[0.2em] text-outline">
-                    ETA
-                  </div>
-                  <p className="mt-2 text-sm text-on-surface-variant">
-                    {detail.progress?.etaLabel || "No ETA set yet."}
-                  </p>
-                </div>
-
-                <div className="rounded-[1.2rem] border border-amber-100 bg-[#fffaf0] p-4">
-                  <div className="text-[11px] font-bold uppercase tracking-[0.2em] text-outline">
-                    Admin Notes
-                  </div>
-                  <p className="mt-2 text-sm text-on-surface-variant">
-                    {detail.progress?.adminNotes || "No admin notes yet."}
-                  </p>
-                </div>
-
-                <div className="rounded-[1.2rem] border border-amber-100 bg-[#fffaf0] p-4">
-                  <div className="text-[11px] font-bold uppercase tracking-[0.2em] text-outline">
-                    Last Updated
-                  </div>
-                  <p className="mt-2 text-sm text-on-surface-variant">
-                    {detail.progress
-                      ? formatDateTime(detail.progress.updatedAt)
-                      : "Not updated yet."}
-                  </p>
-                </div>
-              </div>
-
-              <div className="mt-5 space-y-3">
-                {detail.checks.map((check) => (
-                  <div
-                    key={check.id}
-                    className="rounded-[1.2rem] border border-amber-100 bg-white p-4"
-                  >
-                    <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
-                      <p className="font-semibold text-on-surface">
-                        {check.checkName}
-                      </p>
-                      <span className="text-[11px] font-bold uppercase tracking-[0.18em] text-outline">
-                        {formatStatus(check.status)}
-                      </span>
-                    </div>
-                    <p className="mt-2 text-sm text-on-surface-variant">
-                      {check.notes ||
-                        check.timelineLabel ||
-                        "No saved details yet."}
-                    </p>
-                  </div>
-                ))}
-              </div>
-            </div>
           </section>
 
           <section className="rounded-[2rem] border border-amber-200 bg-white p-6 shadow-[0_18px_60px_rgba(66,44,0,0.06)]">
-            <h2 className="font-headline text-xl font-bold text-on-surface">
-              Full Google Sheet Data
-            </h2>
-            <p className="mt-2 text-sm text-on-surface-variant">
-              Raw field values from the matched Google Sheet row.
-            </p>
-
-            <div className="mt-5 grid gap-4 md:grid-cols-2">
-              {rawEntries.map(([rawLabel, value]) => {
-                const label = stripColumnSuffix(rawLabel);
-                const isUpload = /\|upload-/i.test(rawLabel);
-                const isImage = /\.(png|jpe?g|gif|webp|svg)$/i.test(value);
-
-                return (
-                  <div
-                    key={rawLabel}
-                    className="rounded-[1.2rem] border border-amber-100 bg-[#fffaf0] p-4"
-                  >
-                    <div className="text-[11px] font-bold uppercase tracking-[0.18em] text-outline">
-                      {label}
-                    </div>
-                    <div className="mt-2">
-                      {isUpload ? (
-                        isImage ? (
-                          <a
-                            href={value}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="block"
-                          >
-                            <img
-                              src={value}
-                              alt={label}
-                              className="h-36 w-full rounded-xl object-cover ring-1 ring-amber-200 transition hover:opacity-90"
-                            />
-                            <span className="mt-1.5 inline-flex items-center gap-1 text-[11px] font-semibold text-primary hover:underline">
-                              Open full image ↗
-                            </span>
-                          </a>
-                        ) : (
-                          <a
-                            href={value}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="inline-flex items-center gap-2 rounded-full border border-[#f0ca52] bg-primary px-4 py-2 text-xs font-bold uppercase tracking-[0.16em] text-[color:var(--color-on-primary)] transition hover:bg-primary-container"
-                          >
-                            View Attachment ↗
-                          </a>
-                        )
-                      ) : (
-                        <div className="break-words text-sm leading-6 text-on-surface-variant">
-                          {value}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                );
-              })}
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <h2 className="font-headline text-xl font-bold text-on-surface">
+                  Our Data
+                </h2>
+                <p className="mt-1 text-sm text-on-surface-variant">
+                  Progress snapshot for this order.
+                </p>
+              </div>
+              <GoogleSheetDataDialog entries={rawEntries} iconOnly />
             </div>
 
-            <div className="mt-6 rounded-[1.4rem] border border-amber-100 bg-[#fffaf0] p-5">
-              <h3 className="font-headline text-lg font-bold text-on-surface">
-                Activity Feed
-              </h3>
-              <div className="mt-4 space-y-3">
-                {detail.activities.length > 0 ? (
-                  detail.activities.map((activity) => (
-                    <div
-                      key={activity.id}
-                      className="text-sm text-on-surface-variant"
-                    >
-                      <span className="font-semibold text-on-surface">
-                        {formatDateTime(activity.createdAt)}
-                      </span>
-                      {" - "}
-                      {activity.message}
-                      {activity.highlight ? (
-                        <span className="font-semibold text-on-surface">
-                          {" "}
-                          {activity.highlight}
-                        </span>
-                      ) : null}
-                    </div>
-                  ))
-                ) : (
-                  <p className="text-sm text-on-surface-variant">
-                    No activity has been recorded yet.
-                  </p>
-                )}
+            <div className="mt-5 grid gap-3 sm:grid-cols-2">
+              <div className="rounded-[1.2rem] border border-amber-100 bg-[#fffaf0] p-4">
+                <div className="text-[11px] font-bold uppercase tracking-[0.2em] text-outline">
+                  Summary
+                </div>
+                <p className="mt-2 text-sm text-on-surface-variant">
+                  {detail.progress?.summary || "—"}
+                </p>
+              </div>
+
+              <div className="rounded-[1.2rem] border border-amber-100 bg-[#fffaf0] p-4">
+                <div className="text-[11px] font-bold uppercase tracking-[0.2em] text-outline">
+                  ETA
+                </div>
+                <p className="mt-2 text-sm text-on-surface-variant">
+                  {detail.progress?.etaLabel || "—"}
+                </p>
+              </div>
+
+              <div className="rounded-[1.2rem] border border-amber-100 bg-[#fffaf0] p-4">
+                <div className="text-[11px] font-bold uppercase tracking-[0.2em] text-outline">
+                  Admin Notes
+                </div>
+                <p className="mt-2 text-sm text-on-surface-variant">
+                  {detail.progress?.adminNotes || "—"}
+                </p>
+              </div>
+
+              <div className="rounded-[1.2rem] border border-amber-100 bg-[#fffaf0] p-4">
+                <div className="text-[11px] font-bold uppercase tracking-[0.2em] text-outline">
+                  Last Updated
+                </div>
+                <p className="mt-2 text-sm text-on-surface-variant">
+                  {detail.progress
+                    ? formatDateTime(detail.progress.updatedAt)
+                    : "—"}
+                </p>
               </div>
             </div>
+
+            {detail.checks.length > 0 ? (
+              <div className="mt-5 space-y-2">
+                <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-outline">
+                  Checks
+                </p>
+                {detail.checks.map((check) => (
+                  <div
+                    key={check.id}
+                    className="flex items-center justify-between gap-3 rounded-[1.2rem] border border-amber-100 bg-white px-4 py-3"
+                  >
+                    <p className="text-sm font-semibold text-on-surface">
+                      {check.checkName}
+                    </p>
+                    <span className="shrink-0 text-[11px] font-bold uppercase tracking-[0.18em] text-outline">
+                      {formatStatus(check.status)}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            ) : null}
           </section>
         </div>
       </section>

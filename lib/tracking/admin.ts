@@ -242,6 +242,9 @@ export async function getServiceCheckById(
 
   const check = await prisma.checkTypeProgress.findFirst({
     where: { id: checkId, orderProgressId },
+    include: {
+      tasks: { orderBy: { sortOrder: "asc" } },
+    },
   });
 
   if (!check) {
@@ -258,7 +261,114 @@ export async function getServiceCheckById(
     createdAt: check.createdAt.toISOString(),
     updatedAt: check.updatedAt.toISOString(),
     trackingNumber: order.trackingNumber,
+    tasks: check.tasks.map((t) => ({
+      id: t.id,
+      title: t.title,
+      status: t.status as import("@/lib/tracking/types").CheckProgressStatus,
+      notes: t.notes,
+      sortOrder: t.sortOrder,
+      createdAt: t.createdAt.toISOString(),
+      updatedAt: t.updatedAt.toISOString(),
+    })),
   };
+}
+
+export async function createCheckTask(
+  trackingNumber: string,
+  checkId: string,
+  title: string,
+) {
+  const order = await getRequiredOrder(trackingNumber);
+  const orderProgressId = await getProgressIdByTrackingNumber(order.trackingNumber);
+
+  const check = await prisma.checkTypeProgress.findFirst({
+    where: { id: checkId, orderProgressId },
+    include: { tasks: { select: { id: true } } },
+  });
+
+  if (!check) throw new AdminTrackingError("Service check not found.");
+
+  const trimmed = title.trim();
+  if (!trimmed) throw new AdminTrackingError("Task title cannot be empty.");
+
+  await prisma.checkTask.create({
+    data: {
+      checkTypeProgressId: checkId,
+      title: trimmed,
+      sortOrder: check.tasks.length,
+    },
+  });
+}
+
+export async function updateCheckTask(
+  trackingNumber: string,
+  checkId: string,
+  taskId: string,
+  payload: { status?: string; notes?: string; title?: string },
+) {
+  const order = await getRequiredOrder(trackingNumber);
+  const orderProgressId = await getProgressIdByTrackingNumber(order.trackingNumber);
+
+  const check = await prisma.checkTypeProgress.findFirst({
+    where: { id: checkId, orderProgressId },
+  });
+  if (!check) throw new AdminTrackingError("Service check not found.");
+
+  const task = await prisma.checkTask.findFirst({
+    where: { id: taskId, checkTypeProgressId: checkId },
+  });
+  if (!task) throw new AdminTrackingError("Task not found.");
+
+  await prisma.checkTask.update({
+    where: { id: taskId },
+    data: {
+      status:
+        payload.status !== undefined ? parseProgressStatus(payload.status) : undefined,
+      notes: payload.notes !== undefined ? payload.notes : undefined,
+      title: payload.title?.trim() ? payload.title.trim() : undefined,
+    },
+  });
+}
+
+export async function deleteCheckTask(
+  trackingNumber: string,
+  checkId: string,
+  taskId: string,
+) {
+  const order = await getRequiredOrder(trackingNumber);
+  const orderProgressId = await getProgressIdByTrackingNumber(order.trackingNumber);
+
+  const check = await prisma.checkTypeProgress.findFirst({
+    where: { id: checkId, orderProgressId },
+  });
+  if (!check) throw new AdminTrackingError("Service check not found.");
+
+  await prisma.checkTask.deleteMany({
+    where: { id: taskId, checkTypeProgressId: checkId },
+  });
+}
+
+export async function reorderCheckTasks(
+  trackingNumber: string,
+  checkId: string,
+  orderedIds: string[],
+) {
+  const order = await getRequiredOrder(trackingNumber);
+  const orderProgressId = await getProgressIdByTrackingNumber(order.trackingNumber);
+
+  const check = await prisma.checkTypeProgress.findFirst({
+    where: { id: checkId, orderProgressId },
+  });
+  if (!check) throw new AdminTrackingError("Service check not found.");
+
+  await Promise.all(
+    orderedIds.map((id, index) =>
+      prisma.checkTask.updateMany({
+        where: { id, checkTypeProgressId: checkId },
+        data: { sortOrder: index },
+      }),
+    ),
+  );
 }
 
 export async function getProgressOnly(trackingNumber: string) {

@@ -35,9 +35,11 @@ export default function Input({
         <input
           id={inputId}
           className={[
-            "w-full rounded-lg border border-[color:var(--color-outline-variant)] bg-white py-2.5 text-sm text-[color:var(--color-on-surface)] placeholder:text-[color:var(--color-outline)] focus:border-primary focus:outline-none focus:ring-2 focus:ring-[color:var(--color-primary-fixed)] transition",
+            "w-full rounded-xl border border-[color:var(--color-outline-variant)] bg-white py-2.5 text-sm text-[color:var(--color-on-surface)] placeholder:text-[color:var(--color-outline)] focus:border-primary focus:outline-none focus:ring-2 focus:ring-[color:var(--color-primary-fixed)] transition",
             leftIcon ? "pl-9 pr-3" : "px-3",
-            error ? "border-red-400 focus:border-red-400 focus:ring-red-100" : "",
+            error
+              ? "border-red-400 focus:border-red-400 focus:ring-red-100"
+              : "",
             className,
           ]
             .filter(Boolean)
