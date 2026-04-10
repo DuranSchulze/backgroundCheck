@@ -3,11 +3,12 @@
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import {
-  BriefcaseBusiness,
+  Building2,
   ChevronDown,
+  ClipboardCheck,
   Grid2X2,
   ListFilter,
-  Search,
+  MapPin,
   Table2,
   UserSearch,
 } from "lucide-react";
@@ -96,6 +97,17 @@ export default function AdminDashboard({ rows }: AdminDashboardProps) {
   const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
 
+  const withChecks = rows.filter(
+    (r) => r.selectedCheckCategories.length > 0,
+  ).length;
+  const metroCount = rows.filter((r) =>
+    /metro manila/i.test(r.areaOfCheck),
+  ).length;
+  const outsideMetro = rows.filter(
+    (r) =>
+      r.areaOfCheck.trim().length > 0 && !/metro manila/i.test(r.areaOfCheck),
+  ).length;
+
   const filteredRows = useMemo(() => {
     return rows.filter(
       (row) => matchesFilter(row, filterMode) && matchesSearch(row, searchTerm),
@@ -108,7 +120,6 @@ export default function AdminDashboard({ rows }: AdminDashboardProps) {
     (safeCurrentPage - 1) * PAGE_SIZE,
     safeCurrentPage * PAGE_SIZE,
   );
-
   const pageNumbers = getPageNumbers(safeCurrentPage, totalPages);
 
   function updateFilter(nextFilter: FilterMode) {
@@ -121,75 +132,93 @@ export default function AdminDashboard({ rows }: AdminDashboardProps) {
     setCurrentPage(1);
   }
 
-  return (
-    <div className="space-y-8">
-      <div className="grid gap-4 lg:grid-cols-[1.4fr_0.6fr]">
-        <div className="border border-outline-variant/20 bg-white p-6">
-          <div className="flex items-start gap-4">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center bg-primary-fixed text-primary">
-              <BriefcaseBusiness className="h-6 w-6" />
-            </div>
-            <div>
-              <p className="text-[11px] font-bold uppercase tracking-[0.28em] text-outline">
-                Background Operations
-              </p>
-              <h2 className="mt-2 font-headline text-2xl font-extrabold text-on-surface md:text-3xl">
-                Background Check Status Management
-              </h2>
-              <p className="mt-3 max-w-3xl text-sm leading-7 text-on-surface-variant">
-                Monitor incoming requests, inspect case intake details, and move
-                into each order&apos;s progress workspace from one operational
-                queue.
-              </p>
-            </div>
-          </div>
-        </div>
+  const stats: Array<{
+    label: string;
+    value: number;
+    filter: FilterMode;
+    icon: React.ReactNode;
+  }> = [
+    {
+      label: "Total Cases",
+      value: rows.length,
+      filter: "all",
+      icon: <ClipboardCheck className="h-4 w-4" />,
+    },
+    {
+      label: "With Checks",
+      value: withChecks,
+      filter: "with-checks",
+      icon: <ClipboardCheck className="h-4 w-4" />,
+    },
+    {
+      label: "Metro Manila",
+      value: metroCount,
+      filter: "metro-manila",
+      icon: <MapPin className="h-4 w-4" />,
+    },
+    {
+      label: "Outside Metro",
+      value: outsideMetro,
+      filter: "outside-metro",
+      icon: <MapPin className="h-4 w-4" />,
+    },
+  ];
 
-        <div className="border border-outline-variant/20 bg-white p-6">
-          <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-outline">
-            Queue Snapshot
-          </p>
-          <div className="mt-4 grid grid-cols-2 gap-4">
-            <div>
-              <div className="text-3xl font-headline font-extrabold text-on-surface">
-                {rows.length}
+  return (
+    <div className="space-y-5">
+      {/* Interactive stat-filter strip */}
+      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+        {stats.map((stat) => {
+          const active = filterMode === stat.filter;
+          return (
+            <button
+              key={stat.label}
+              type="button"
+              onClick={() => updateFilter(stat.filter)}
+              className={[
+                "border p-4 text-left transition-colors",
+                active
+                  ? "border-primary bg-primary"
+                  : "border-outline-variant/20 bg-white hover:border-primary/40 hover:bg-surface-container-low",
+              ].join(" ")}
+            >
+              <div
+                className={[
+                  "flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.22em]",
+                  active ? "text-on-primary/70" : "text-outline",
+                ].join(" ")}
+              >
+                {stat.icon}
+                {stat.label}
               </div>
-              <div className="mt-1 text-xs uppercase tracking-[0.18em] text-outline">
-                Total Cases
+              <div
+                className={[
+                  "mt-3 font-headline text-3xl font-extrabold",
+                  active ? "text-on-primary" : "text-on-surface",
+                ].join(" ")}
+              >
+                {stat.value}
               </div>
-            </div>
-            <div>
-              <div className="text-3xl font-headline font-extrabold text-on-surface">
-                {
-                  rows.filter((row) => row.selectedCheckCategories.length > 0)
-                    .length
-                }
-              </div>
-              <div className="mt-1 text-xs uppercase tracking-[0.18em] text-outline">
-                With Checks
-              </div>
-            </div>
-          </div>
-        </div>
+            </button>
+          );
+        })}
       </div>
 
-      <section className="border border-outline-variant/20 bg-white p-6">
-        <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
+      {/* Search + controls + table/cards all in one panel */}
+      <div className="border border-outline-variant/20 bg-white">
+        {/* Toolbar */}
+        <div className="flex flex-col gap-3 border-b border-outline-variant/20 p-4 xl:flex-row xl:items-center xl:gap-4">
           <div className="flex-1">
-            <div className="mb-3 flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.24em] text-outline">
-              <Search className="h-4 w-4 text-primary" />
-              Search
-            </div>
             <Input
               value={searchTerm}
               onChange={(event) => updateSearch(event.target.value)}
-              placeholder="Search by tracking number, email, subject, company, or purpose"
+              placeholder="Search tracking number, name, email, company or purpose…"
               leftIcon={<UserSearch className="h-4 w-4" />}
-              className="h-12 border border-outline-variant/20"
+              className="h-10 border border-outline-variant/20"
             />
           </div>
 
-          <div className="flex shrink-0 items-center gap-3">
+          <div className="flex shrink-0 items-center gap-2">
             <div className="relative flex items-center">
               <ListFilter className="pointer-events-none absolute left-3 h-3.5 w-3.5 text-primary" />
               <select
@@ -215,7 +244,7 @@ export default function AdminDashboard({ rows }: AdminDashboardProps) {
                 className={[
                   "inline-flex items-center justify-center p-2 transition-colors",
                   viewMode === "table"
-                    ? "bg-primary text-[color:var(--color-on-primary)]"
+                    ? "bg-primary text-on-primary"
                     : "text-on-surface-variant hover:text-on-surface",
                 ].join(" ")}
               >
@@ -228,7 +257,7 @@ export default function AdminDashboard({ rows }: AdminDashboardProps) {
                 className={[
                   "inline-flex items-center justify-center p-2 transition-colors",
                   viewMode === "card"
-                    ? "bg-primary text-[color:var(--color-on-primary)]"
+                    ? "bg-primary text-on-primary"
                     : "text-on-surface-variant hover:text-on-surface",
                 ].join(" ")}
               >
@@ -238,192 +267,255 @@ export default function AdminDashboard({ rows }: AdminDashboardProps) {
           </div>
         </div>
 
-        <div className="mt-6 flex flex-wrap items-center justify-between gap-3 border border-outline-variant/20 bg-surface-container-low px-4 py-3">
-          <div className="flex items-center gap-2 text-sm text-on-surface-variant">
-            <ListFilter className="h-4 w-4 text-primary" />
-            Showing{" "}
+        {/* Status bar */}
+        <div className="flex items-center justify-between gap-3 bg-surface-container-low px-4 py-2.5">
+          <div className="flex items-center gap-1.5 text-xs text-on-surface-variant">
             <span className="font-semibold text-on-surface">
               {paginatedRows.length}
             </span>
-            of{" "}
+            of
             <span className="font-semibold text-on-surface">
               {filteredRows.length}
             </span>
-            filtered cases
+            cases
+            {filterMode !== "all" || searchTerm ? (
+              <button
+                type="button"
+                onClick={() => {
+                  updateFilter("all");
+                  updateSearch("");
+                }}
+                className="ml-2 text-[10px] font-bold uppercase tracking-[0.16em] text-primary hover:underline"
+              >
+                Clear filters
+              </button>
+            ) : null}
           </div>
-          <div className="text-xs uppercase tracking-[0.18em] text-outline">
-            Page {safeCurrentPage} of {totalPages}
-          </div>
+          <span className="text-[10px] uppercase tracking-[0.16em] text-outline">
+            Page {safeCurrentPage} / {totalPages}
+          </span>
         </div>
 
-        <div className="mt-6">
-          {viewMode === "table" ? (
-            <div className="overflow-x-auto border border-outline-variant/20">
-              <table className="min-w-full divide-y divide-outline-variant/20 bg-white">
-                <thead className="bg-surface-container-low">
-                  <tr className="text-left text-[11px] font-bold uppercase tracking-[0.2em] text-outline">
-                    <th className="px-6 py-4">Tracking Number</th>
-                    <th className="px-6 py-4">Subject</th>
-                    <th className="px-6 py-4">Requestor Email</th>
-                    <th className="px-6 py-4">Checks Needed</th>
-                    <th className="px-6 py-4">Area</th>
-                    <th className="px-6 py-4">Action</th>
+        {/* Content */}
+        <div className="p-4">
+          {filteredRows.length === 0 ? (
+            <div className="border border-dashed border-outline-variant/30 px-6 py-14 text-center text-sm text-on-surface-variant">
+              No cases matched the current search and filter settings.
+            </div>
+          ) : viewMode === "table" ? (
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-outline-variant/20">
+                <thead>
+                  <tr className="border-b border-outline-variant/20 bg-surface-container-low text-left text-[10px] font-bold uppercase tracking-[0.2em] text-outline">
+                    <th className="px-4 py-3">Tracking #</th>
+                    <th className="px-4 py-3">Company / Purpose</th>
+                    <th className="px-4 py-3">Subject</th>
+                    <th className="px-4 py-3">Requestor</th>
+                    <th className="px-4 py-3">Area</th>
+                    <th className="px-4 py-3">Checks</th>
+                    <th className="px-4 py-3"></th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-outline-variant/10">
-                  {paginatedRows.map((row) => (
-                    <tr key={row.trackingNumber} className="align-top">
-                      <td className="px-6 py-4 text-sm font-semibold text-on-surface">
-                        {row.trackingNumber}
-                      </td>
-                      <td className="px-6 py-4 text-sm text-on-surface-variant">
-                        <div className="font-semibold text-on-surface">
-                          {row.subjectName || "Not provided"}
-                        </div>
-                        <div className="mt-1">
-                          {row.subjectEmail || "No subject email"}
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 text-sm text-on-surface-variant">
-                        {row.submitterEmail || "Not provided"}
-                      </td>
-                      <td className="px-6 py-4">
-                        {(() => {
-                          const checks = getCheckedColumnDetails(row.rawFields);
-                          return checks.length > 0 ? (
-                            <div className="flex flex-col gap-2">
+                  {paginatedRows.map((row) => {
+                    const checks = getCheckedColumnDetails(row.rawFields);
+                    return (
+                      <tr
+                        key={row.trackingNumber}
+                        className="align-top transition-colors hover:bg-surface-container-low/60"
+                      >
+                        <td className="px-4 py-4">
+                          <span className="font-mono text-sm font-bold text-on-surface">
+                            {row.trackingNumber}
+                          </span>
+                        </td>
+                        <td className="px-4 py-4">
+                          {row.companyName ? (
+                            <div className="flex items-center gap-1.5">
+                              <Building2 className="h-3.5 w-3.5 shrink-0 text-outline" />
+                              <span className="text-sm font-semibold text-on-surface">
+                                {row.companyName}
+                              </span>
+                            </div>
+                          ) : null}
+                          {row.purpose ? (
+                            <div className="mt-1 text-xs text-on-surface-variant">
+                              {row.purpose}
+                            </div>
+                          ) : !row.companyName ? (
+                            <span className="text-sm text-outline">—</span>
+                          ) : null}
+                        </td>
+                        <td className="px-4 py-4">
+                          <div className="text-sm font-semibold text-on-surface">
+                            {row.subjectName || "—"}
+                          </div>
+                          {row.subjectEmail ? (
+                            <div className="mt-0.5 text-xs text-on-surface-variant">
+                              {row.subjectEmail}
+                            </div>
+                          ) : null}
+                        </td>
+                        <td className="px-4 py-4">
+                          <div className="text-sm font-semibold text-on-surface">
+                            {row.submitterName || "—"}
+                          </div>
+                          {row.submitterEmail ? (
+                            <div className="mt-0.5 text-xs text-on-surface-variant">
+                              {row.submitterEmail}
+                            </div>
+                          ) : null}
+                        </td>
+                        <td className="px-4 py-4">
+                          {row.areaOfCheck ? (
+                            <div className="flex items-center gap-1.5 text-sm text-on-surface-variant">
+                              <MapPin className="h-3.5 w-3.5 shrink-0 text-outline" />
+                              {row.areaOfCheck}
+                            </div>
+                          ) : (
+                            <span className="text-sm text-outline">—</span>
+                          )}
+                        </td>
+                        <td className="px-4 py-4">
+                          {checks.length > 0 ? (
+                            <div className="flex flex-col gap-1.5">
                               {checks.map((check) => (
-                                <div
+                                <Badge
                                   key={check.label}
-                                  className="flex flex-col gap-0.5"
-                                >
-                                  <Badge
-                                    status="processing"
-                                    label={check.label}
-                                    className="border border-outline-variant/20"
-                                  />
-                                  <span className="text-[11px] text-on-surface-variant">
-                                    {check.value
-                                      .replace(/-/g, " ")
-                                      .replace(/–/g, "–")}
-                                  </span>
-                                </div>
+                                  status="processing"
+                                  label={check.label}
+                                />
                               ))}
                             </div>
                           ) : (
                             <span className="text-sm text-outline">—</span>
-                          );
-                        })()}
-                      </td>
-                      <td className="px-6 py-4 text-sm text-on-surface-variant">
-                        {row.areaOfCheck || "Not provided"}
-                      </td>
-                      <td className="px-6 py-4">
-                        <Link
-                          href={`/admin/orders/${encodeURIComponent(row.trackingNumber)}`}
-                          className="inline-flex border border-[#f0ca52] bg-primary px-4 py-2 text-xs font-bold uppercase tracking-[0.18em] text-on-primary transition-colors hover:bg-primary-container hover:text-on-primary-container"
-                        >
-                          Open Case
-                        </Link>
-                      </td>
-                    </tr>
-                  ))}
+                          )}
+                        </td>
+                        <td className="px-4 py-4">
+                          <Link
+                            href={`/admin/orders/${encodeURIComponent(row.trackingNumber)}`}
+                            className="inline-flex border border-[#f0ca52] bg-primary px-4 py-2 text-xs font-bold uppercase tracking-[0.18em] text-on-primary transition-colors hover:bg-primary-container hover:text-on-primary-container"
+                          >
+                            Open
+                          </Link>
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
           ) : (
-            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-              {paginatedRows.map((row) => (
-                <div
-                  key={row.trackingNumber}
-                  className="border border-outline-variant/20 bg-white p-5"
-                >
-                  <div className="flex items-start justify-between gap-3">
-                    <div>
-                      <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-outline">
-                        Tracking Number
-                      </p>
-                      <h3 className="mt-2 font-headline text-lg font-bold text-on-surface">
-                        {row.trackingNumber}
-                      </h3>
-                    </div>
-                    <span className="border border-outline-variant/30 bg-surface-container-low px-3 py-1 text-[10px] font-bold uppercase tracking-[0.18em] text-outline">
-                      {row.selectedCheckCategories.length} checks
-                    </span>
-                  </div>
-
-                  <div className="mt-5 space-y-3 text-sm text-on-surface-variant">
-                    <div>
-                      <div className="text-[11px] font-bold uppercase tracking-[0.18em] text-outline">
-                        Subject
-                      </div>
-                      <div className="mt-1 font-semibold text-on-surface">
-                        {row.subjectName || "Not provided"}
-                      </div>
-                    </div>
-                    <div>
-                      <div className="text-[11px] font-bold uppercase tracking-[0.18em] text-outline">
-                        Requestor
-                      </div>
-                      <div className="mt-1">
-                        {row.submitterEmail || "Not provided"}
-                      </div>
-                    </div>
-                    <div>
-                      <div className="text-[11px] font-bold uppercase tracking-[0.18em] text-outline">
-                        Checks Needed
-                      </div>
-                      <div className="mt-2 flex flex-wrap gap-2">
-                        {(() => {
-                          const checks = getCheckedColumnDetails(row.rawFields);
-                          return checks.length > 0 ? (
-                            checks.map((check) => (
-                              <div
-                                key={check.label}
-                                className="inline-flex flex-col gap-1 border border-outline-variant/20"
-                              >
-                                <Badge
-                                  status="processing"
-                                  label={check.label}
-                                  className="border border-outline-variant/20"
-                                />
-                                <span className="text-[11px] font-medium text-on-surface-variant">
-                                  {check.value
-                                    .replace(/-/g, " ")
-                                    .replace(/–/g, "–")}
-                                </span>
-                              </div>
-                            ))
-                          ) : (
-                            <span className="text-sm text-outline">
-                              No checks selected
-                            </span>
-                          );
-                        })()}
-                      </div>
-                    </div>
-                  </div>
-
-                  <Link
-                    href={`/admin/orders/${encodeURIComponent(row.trackingNumber)}`}
-                    className="mt-5 inline-flex border border-outline-variant/20 bg-primary px-4 py-2 text-xs font-bold uppercase tracking-[0.18em] text-on-primary transition-colors hover:bg-primary-container hover:text-on-primary-container"
+            <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+              {paginatedRows.map((row) => {
+                const checks = getCheckedColumnDetails(row.rawFields);
+                return (
+                  <div
+                    key={row.trackingNumber}
+                    className="flex flex-col border border-outline-variant/20 bg-white"
                   >
-                    Open Case
-                  </Link>
-                </div>
-              ))}
+                    {/* Card header */}
+                    <div className="flex items-center justify-between gap-3 border-b border-outline-variant/20 bg-surface-container-low px-4 py-3">
+                      <span className="font-mono text-sm font-bold text-on-surface">
+                        {row.trackingNumber}
+                      </span>
+                      <span className="border border-outline-variant/30 bg-white px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.18em] text-outline">
+                        {checks.length}{" "}
+                        {checks.length === 1 ? "check" : "checks"}
+                      </span>
+                    </div>
+
+                    {/* Card body */}
+                    <div className="flex flex-1 flex-col gap-4 p-4">
+                      {row.companyName ? (
+                        <div className="flex items-center gap-2">
+                          <Building2 className="h-3.5 w-3.5 shrink-0 text-outline" />
+                          <span className="text-sm font-semibold text-on-surface">
+                            {row.companyName}
+                          </span>
+                        </div>
+                      ) : null}
+
+                      <div className="grid grid-cols-2 gap-3 border-t border-outline-variant/10 pt-3">
+                        <div>
+                          <div className="text-[10px] font-bold uppercase tracking-[0.18em] text-outline">
+                            Subject
+                          </div>
+                          <div className="mt-1 text-sm font-semibold text-on-surface">
+                            {row.subjectName || "—"}
+                          </div>
+                          {row.subjectEmail ? (
+                            <div className="mt-0.5 text-[11px] text-on-surface-variant">
+                              {row.subjectEmail}
+                            </div>
+                          ) : null}
+                        </div>
+                        <div>
+                          <div className="text-[10px] font-bold uppercase tracking-[0.18em] text-outline">
+                            Requestor
+                          </div>
+                          <div className="mt-1 text-sm font-semibold text-on-surface">
+                            {row.submitterName || "—"}
+                          </div>
+                          {row.submitterEmail ? (
+                            <div className="mt-0.5 text-[11px] text-on-surface-variant">
+                              {row.submitterEmail}
+                            </div>
+                          ) : null}
+                        </div>
+                      </div>
+
+                      {row.purpose || row.areaOfCheck ? (
+                        <div className="space-y-1.5 border-t border-outline-variant/10 pt-3">
+                          {row.purpose ? (
+                            <div className="text-[11px] text-on-surface-variant">
+                              <span className="font-bold uppercase tracking-[0.14em] text-outline">
+                                Purpose ·{" "}
+                              </span>
+                              {row.purpose}
+                            </div>
+                          ) : null}
+                          {row.areaOfCheck ? (
+                            <div className="flex items-center gap-1.5 text-[11px] text-on-surface-variant">
+                              <MapPin className="h-3 w-3 shrink-0 text-outline" />
+                              {row.areaOfCheck}
+                            </div>
+                          ) : null}
+                        </div>
+                      ) : null}
+
+                      {checks.length > 0 ? (
+                        <div className="flex flex-wrap gap-1.5 border-t border-outline-variant/10 pt-3">
+                          {checks.map((check) => (
+                            <Badge
+                              key={check.label}
+                              status="processing"
+                              label={check.label}
+                            />
+                          ))}
+                        </div>
+                      ) : null}
+                    </div>
+
+                    {/* Card footer */}
+                    <div className="border-t border-outline-variant/20 px-4 py-3">
+                      <Link
+                        href={`/admin/orders/${encodeURIComponent(row.trackingNumber)}`}
+                        className="inline-flex border border-[#f0ca52] bg-primary px-4 py-2 text-xs font-bold uppercase tracking-[0.18em] text-on-primary transition-colors hover:bg-primary-container hover:text-on-primary-container"
+                      >
+                        Open Case →
+                      </Link>
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           )}
-
-          {filteredRows.length === 0 ? (
-            <div className="border border-outline-variant/20 bg-surface-container-low px-6 py-12 text-center text-sm text-on-surface-variant">
-              No cases matched the current search and filter settings.
-            </div>
-          ) : null}
         </div>
 
+        {/* Pagination */}
         {totalPages > 1 ? (
-          <div className="mt-8">
+          <div className="border-t border-outline-variant/20 p-4">
             <Pagination>
               <PaginationContent>
                 <PaginationItem>
@@ -489,7 +581,7 @@ export default function AdminDashboard({ rows }: AdminDashboardProps) {
             </Pagination>
           </div>
         ) : null}
-      </section>
+      </div>
     </div>
   );
 }

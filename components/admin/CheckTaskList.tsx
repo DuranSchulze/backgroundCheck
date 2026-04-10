@@ -370,6 +370,7 @@ export default function CheckTaskList({
     taskId: string,
   ) {
     event.dataTransfer.effectAllowed = "move";
+    window.getSelection()?.removeAllRanges();
     setDragState({
       taskId,
       overStatus: null,
@@ -582,7 +583,7 @@ export default function CheckTaskList({
 
       <section
         className={[
-          "border border-outline-variant/20 bg-surface-container-low/50",
+          "select-none border border-outline-variant/20 bg-surface-container-low/50",
           fullScreen ? "p-3 md:p-4" : "p-4",
         ].join(" ")}
       >
@@ -635,7 +636,7 @@ export default function CheckTaskList({
                           handleDrop(event, column.value, task.id)
                         }
                         className={[
-                          "cursor-grab border border-outline-variant/20 bg-white p-4 transition",
+                          "cursor-grab select-none border border-outline-variant/20 bg-white p-4 transition",
                           "hover:-translate-y-0.5 hover:shadow-[0_18px_40px_rgba(15,23,42,0.12)]",
                           "touch-pan-x",
                           isDragging ? "opacity-45" : "opacity-100",
