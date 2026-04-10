@@ -20,6 +20,8 @@ export type CheckProgressStatus =
   | "COMPLETED"
   | "ON_HOLD";
 
+export type TaskPriority = "LOW" | "MEDIUM" | "HIGH" | "URGENT";
+
 export interface MetadataField {
   label: string;
   value: string;
@@ -39,6 +41,22 @@ export interface ActivityItem {
   highlight?: string;
 }
 
+export interface TrackingTaskDetail {
+  id: string;
+  label: string;
+  title: string;
+  status: string;
+  remarks: string | null;
+}
+
+export interface TrackingCheckDetail {
+  id: string;
+  label: string;
+  overall: string;
+  remarks: string | null;
+  tasks: TrackingTaskDetail[];
+}
+
 export interface TrackingRecord {
   referenceNumber: string;
   status: TrackingStatus;
@@ -48,6 +66,7 @@ export interface TrackingRecord {
   summary: string;
   metadataFields: MetadataField[];
   pipelineSteps: PipelineStepData[];
+  checks: TrackingCheckDetail[];
   recentActivity: ActivityItem[];
 }
 
@@ -92,13 +111,41 @@ export interface OrderProgressSummary {
 
 export interface CheckProgressView {
   id: string;
-  checkName: string;
+  serviceKey: string;
+  serviceLabel: string;
   status: CheckProgressStatus;
   timelineLabel: string | null;
   notes: string | null;
   sortOrder: number | null;
   createdAt: string;
   updatedAt: string;
+}
+
+export interface StaffUserView {
+  id: string;
+  name: string;
+  email: string;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CheckTaskView {
+  id: string;
+  checkId: string;
+  serviceKey: string;
+  serviceLabel: string;
+  title: string;
+  description: string | null;
+  status: CheckProgressStatus;
+  priority: TaskPriority;
+  publicStepNumber: number | null;
+  dueDate: string | null;
+  notes: string | null;
+  sortOrder: number | null;
+  createdAt: string;
+  updatedAt: string;
+  assignee: StaffUserView | null;
 }
 
 export interface ProgressActivityView {
@@ -112,6 +159,7 @@ export interface OrderProgressView {
   order: SheetOrderSnapshot;
   progress: OrderProgressSummary | null;
   checks: CheckProgressView[];
+  tasks: CheckTaskView[];
   activities: ProgressActivityView[];
   trackerRecord: TrackingRecord;
 }

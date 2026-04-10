@@ -6,6 +6,7 @@ import {
   getColumnIndex,
   mapSheetRowToOrderSnapshot,
 } from "@/lib/tracking/google-sheets";
+import { getReferenceAliases } from "@/lib/tracking/normalize";
 
 const headerRow = [
   "Your complete name|text-1",
@@ -72,5 +73,17 @@ test("mapSheetRowToOrderSnapshot rejects rows without a tracking number value", 
         "",
       ]),
     /Order Tracking Number/,
+  );
+});
+
+test("getReferenceAliases matches numeric order references with ORD-prefixed values", () => {
+  assert.deepEqual(
+    [...getReferenceAliases("307")].sort(),
+    ["307", "ORD-307"],
+  );
+
+  assert.deepEqual(
+    [...getReferenceAliases("ord-307")].sort(),
+    ["307", "ORD-307"],
   );
 });

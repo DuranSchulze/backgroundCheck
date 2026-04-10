@@ -1,14 +1,20 @@
-import { ProgressStatus } from "@/lib/generated/prisma/enums";
+import { ProgressStatus, TaskPriority } from "@/lib/generated/prisma/enums";
 import { prisma } from "@/lib/prisma";
+import { getCheckCategoryLabel, buildTrackingRecord } from "@/lib/tracking/format";
 import { findOrderRowByTrackingNumber } from "@/lib/tracking/google-sheets";
-import { buildTrackingRecord, getCheckedColumnDetails } from "@/lib/tracking/format";
 import {
   ensureOrderProgressForSnapshot,
+  getOrderPublicStepTasks,
   getOrderProgressByTrackingNumber,
+  getOrderWorkflowTasks,
+  syncCheckProgressRollups,
 } from "@/lib/tracking/progress";
 import type {
   CheckProgressStatus,
+  CheckTaskView,
   OrderProgressView,
+  SheetOrderSnapshot,
+  TaskPriority as TaskPriorityValue,
 } from "@/lib/tracking/types";
 
 export class AdminTrackingError extends Error {}
@@ -21,6 +27,53 @@ function parseProgressStatus(value: unknown) {
   }
 
   return value as CheckProgressStatus;
+}
+
+function parseTaskPriority(value: unknown) {
+  if (typeof value !== "string" || !(value in TaskPriority)) {
+    throw new AdminTrackingError(
+      "Priority must be one of LOW, MEDIUM, HIGH, or URGENT.",
+    );
+  }
+
+  return value as TaskPriorityValue;
+}
+
+function parseDueDate(value: unknown) {
+  if (value === null || value === undefined || value === "") {
+    return null;
+  }
+
+  if (typeof value !== "string") {
+    throw new AdminTrackingError("Due date must be an ISO string or empty.");
+  }
+
+  const parsed = new Date(value);
+
+  if (Number.isNaN(parsed.getTime())) {
+    throw new AdminTrackingError("Due date must be a valid date.");
+  }
+
+  return parsed;
+}
+
+function parsePublicStepNumber(value: unknown) {
+  if (value === null || value === undefined || value === "") {
+    return null;
+  }
+
+  const parsed =
+    typeof value === "number"
+      ? value
+      : typeof value === "string"
+        ? Number.parseInt(value, 10)
+        : Number.NaN;
+
+  if (!Number.isInteger(parsed) || parsed <= 0) {
+    throw new AdminTrackingError("Step # must be a positive whole number.");
+  }
+
+  return parsed;
 }
 
 async function getRequiredOrder(trackingNumber: string) {
@@ -48,43 +101,135 @@ async function getProgressIdByTrackingNumber(trackingNumber: string) {
   return progress.id;
 }
 
+function getRequestedServices(order: SheetOrderSnapshot) {
+  return order.selectedCheckCategories.map((checkType, index) => ({
+    serviceKey: checkType,
+    serviceLabel: getCheckCategoryLabel(checkType),
+    sortOrder: index,
+  }));
+}
+
+async function syncServicesFromOrder(order: SheetOrderSnapshot) {
+  const orderProgressId = await getProgressIdByTrackingNumber(order.trackingNumber);
+  const services = getRequestedServices(order);
+
+  if (services.length === 0) {
+    return;
+  }
+
+  await Promise.all(
+    services.map((service) =>
+      prisma.checkTypeProgress.upsert({
+        where: {
+          orderProgressId_serviceKey: {
+            orderProgressId,
+            serviceKey: service.serviceKey,
+          },
+        },
+        create: {
+          orderProgressId,
+          serviceKey: service.serviceKey,
+          serviceLabel: service.serviceLabel,
+          sortOrder: service.sortOrder,
+        },
+        update: {
+          serviceLabel: service.serviceLabel,
+        },
+      }),
+    ),
+  );
+}
+
+async function validateAssigneeId(assigneeId: string | null | undefined) {
+  if (!assigneeId) {
+    return null;
+  }
+
+  const assignee = await prisma.staffUser.findUnique({
+    where: { id: assigneeId },
+    select: { id: true, isActive: true },
+  });
+
+  if (!assignee || !assignee.isActive) {
+    throw new AdminTrackingError("Assignee must be an active staff member.");
+  }
+
+  return assignee.id;
+}
+
+async function getCheckForOrder(trackingNumber: string, checkId: string) {
+  const orderProgressId = await getProgressIdByTrackingNumber(trackingNumber);
+
+  const check = await prisma.checkTypeProgress.findFirst({
+    where: { id: checkId, orderProgressId },
+  });
+
+  if (!check) {
+    throw new AdminTrackingError("Service check not found.");
+  }
+
+  return check;
+}
+
+async function validatePublicStepNumber(params: {
+  trackingNumber: string;
+  taskId?: string;
+  publicStepNumber: number | null;
+}) {
+  if (params.publicStepNumber === null) {
+    return null;
+  }
+
+  const conflictingTask = await prisma.checkTask.findFirst({
+    where: {
+      id: params.taskId ? { not: params.taskId } : undefined,
+      publicStepNumber: params.publicStepNumber,
+      checkTypeProgress: {
+        orderProgress: {
+          trackingNumber: params.trackingNumber,
+        },
+      },
+    },
+    select: {
+      id: true,
+    },
+  });
+
+  if (conflictingTask) {
+    throw new AdminTrackingError(
+      `Step #${params.publicStepNumber} is already assigned to another task in this order.`,
+    );
+  }
+
+  return params.publicStepNumber;
+}
+
+function mapTask(task: CheckTaskView) {
+  return task;
+}
+
 export async function getAdminTrackingDetail(
   trackingNumber: string,
 ): Promise<OrderProgressView> {
   const order = await getRequiredOrder(trackingNumber);
-  const progressData = await ensureOrderProgressForSnapshot(order);
+  await ensureOrderProgressForSnapshot(order);
+  await syncServicesFromOrder(order);
 
-  let checks = progressData.checks;
-
-  if (checks.length === 0) {
-    const checkDetails = getCheckedColumnDetails(order.rawFields);
-    if (checkDetails.length > 0) {
-      const orderProgressId = await getProgressIdByTrackingNumber(order.trackingNumber);
-      await Promise.all(
-        checkDetails.map((check, index) =>
-          prisma.checkTypeProgress.upsert({
-            where: {
-              orderProgressId_checkName: { orderProgressId, checkName: check.label },
-            },
-            create: { orderProgressId, checkName: check.label, sortOrder: index },
-            update: {},
-          }),
-        ),
-      );
-      const refreshed = await getOrderProgressByTrackingNumber(order.trackingNumber);
-      checks = refreshed.checks;
-    }
-  }
+  const progressData = await getOrderProgressByTrackingNumber(order.trackingNumber);
+  const tasks = await getOrderWorkflowTasks(order.trackingNumber);
+  const publicStepTasks = await getOrderPublicStepTasks(order.trackingNumber);
 
   return {
     order,
     progress: progressData.progress,
-    checks,
+    checks: progressData.checks,
+    tasks: tasks.map(mapTask),
     activities: progressData.activities,
     trackerRecord: buildTrackingRecord({
       order,
       progress: progressData.progress,
-      checks,
+      checks: progressData.checks,
+      tasks: publicStepTasks,
       activities: progressData.activities,
     }),
   };
@@ -101,14 +246,23 @@ export async function upsertOverallProgress(
   const body = payload as Record<string, unknown>;
   const order = await getRequiredOrder(trackingNumber);
   await ensureOrderProgressForSnapshot(order);
+  await syncServicesFromOrder(order);
+
+  const checkCount = await prisma.checkTypeProgress.count({
+    where: {
+      orderProgress: {
+        trackingNumber: order.trackingNumber,
+      },
+    },
+  });
 
   await prisma.orderProgress.update({
     where: { trackingNumber: order.trackingNumber },
     data: {
       overallStatus:
-        body.overallStatus === undefined
-          ? undefined
-          : parseProgressStatus(body.overallStatus),
+        checkCount === 0 && body.overallStatus !== undefined
+          ? parseProgressStatus(body.overallStatus)
+          : undefined,
       summary: typeof body.summary === "string" ? body.summary : undefined,
       etaLabel: typeof body.etaLabel === "string" ? body.etaLabel : undefined,
       adminNotes:
@@ -122,72 +276,41 @@ export async function upsertOverallProgress(
 export async function initializeChecksFromSheet(trackingNumber: string) {
   const order = await getRequiredOrder(trackingNumber);
   await ensureOrderProgressForSnapshot(order);
-  const orderProgressId = await getProgressIdByTrackingNumber(order.trackingNumber);
-
-  const checkDetails = getCheckedColumnDetails(order.rawFields);
-
-  if (checkDetails.length === 0) {
-    throw new AdminTrackingError(
-      "No checkbox columns with selected values found in the Google Sheet row.",
-    );
-  }
-
-  await Promise.all(
-    checkDetails.map((check, index) =>
-      prisma.checkTypeProgress.upsert({
-        where: {
-          orderProgressId_checkName: {
-            orderProgressId,
-            checkName: check.label,
-          },
-        },
-        create: {
-          orderProgressId,
-          checkName: check.label,
-          sortOrder: index,
-        },
-        update: {},
-      }),
-    ),
-  );
-
+  await syncServicesFromOrder(order);
   return getAdminTrackingDetail(order.trackingNumber);
 }
 
 export async function updateServiceCheck(
   trackingNumber: string,
   checkId: string,
-  payload: { status?: string; notes?: string },
+  payload: { status?: string; notes?: string; timelineLabel?: string },
 ) {
-  const order = await getRequiredOrder(trackingNumber);
-  const orderProgressId = await getProgressIdByTrackingNumber(order.trackingNumber);
-
-  const existing = await prisma.checkTypeProgress.findFirst({
-    where: { id: checkId, orderProgressId },
+  const check = await getCheckForOrder(trackingNumber, checkId);
+  const taskCount = await prisma.checkTask.count({
+    where: { checkTypeProgressId: check.id },
   });
-
-  if (!existing) {
-    throw new AdminTrackingError("Service check record not found.");
-  }
 
   await prisma.checkTypeProgress.update({
     where: { id: checkId },
     data: {
       status:
-        payload.status !== undefined ? parseProgressStatus(payload.status) : undefined,
+        taskCount === 0 && payload.status !== undefined
+          ? parseProgressStatus(payload.status)
+          : undefined,
       notes: payload.notes !== undefined ? payload.notes : undefined,
+      timelineLabel:
+        payload.timelineLabel !== undefined ? payload.timelineLabel : undefined,
     },
   });
 
-  return getAdminTrackingDetail(order.trackingNumber);
+  return getAdminTrackingDetail(trackingNumber);
 }
 
 export async function reorderServiceChecks(
   trackingNumber: string,
   orderedIds: string[],
 ) {
-  const order = await getRequiredOrder(trackingNumber);
-  const orderProgressId = await getProgressIdByTrackingNumber(order.trackingNumber);
+  const orderProgressId = await getProgressIdByTrackingNumber(trackingNumber);
 
   await Promise.all(
     orderedIds.map((id, index) =>
@@ -198,7 +321,7 @@ export async function reorderServiceChecks(
     ),
   );
 
-  return getAdminTrackingDetail(order.trackingNumber);
+  return getAdminTrackingDetail(trackingNumber);
 }
 
 export async function appendProgressActivity(
@@ -238,12 +361,30 @@ export async function getServiceCheckById(
   checkId: string,
 ) {
   const order = await getRequiredOrder(trackingNumber);
-  const orderProgressId = await getProgressIdByTrackingNumber(order.trackingNumber);
+  await ensureOrderProgressForSnapshot(order);
+  await syncServicesFromOrder(order);
 
   const check = await prisma.checkTypeProgress.findFirst({
-    where: { id: checkId, orderProgressId },
+    where: {
+      id: checkId,
+      orderProgress: {
+        trackingNumber,
+      },
+    },
     include: {
-      tasks: { orderBy: { sortOrder: "asc" } },
+      tasks: {
+        include: {
+          assignee: true,
+          checkTypeProgress: {
+            select: {
+              id: true,
+              serviceKey: true,
+              serviceLabel: true,
+            },
+          },
+        },
+        orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }],
+      },
     },
   });
 
@@ -253,22 +394,40 @@ export async function getServiceCheckById(
 
   return {
     id: check.id,
-    checkName: check.checkName,
-    status: check.status as import("@/lib/tracking/types").CheckProgressStatus,
+    serviceKey: check.serviceKey,
+    serviceLabel: check.serviceLabel,
+    status: check.status as CheckProgressStatus,
     notes: check.notes,
     timelineLabel: check.timelineLabel,
     sortOrder: check.sortOrder,
     createdAt: check.createdAt.toISOString(),
     updatedAt: check.updatedAt.toISOString(),
     trackingNumber: order.trackingNumber,
-    tasks: check.tasks.map((t) => ({
-      id: t.id,
-      title: t.title,
-      status: t.status as import("@/lib/tracking/types").CheckProgressStatus,
-      notes: t.notes,
-      sortOrder: t.sortOrder,
-      createdAt: t.createdAt.toISOString(),
-      updatedAt: t.updatedAt.toISOString(),
+    tasks: check.tasks.map((task) => ({
+      id: task.id,
+      checkId: task.checkTypeProgress.id,
+      serviceKey: task.checkTypeProgress.serviceKey,
+      serviceLabel: task.checkTypeProgress.serviceLabel,
+      title: task.title,
+      description: task.description,
+      status: task.status as CheckProgressStatus,
+      priority: task.priority as TaskPriorityValue,
+      publicStepNumber: task.publicStepNumber,
+      dueDate: task.dueDate?.toISOString() ?? null,
+      notes: task.notes,
+      sortOrder: task.sortOrder,
+      createdAt: task.createdAt.toISOString(),
+      updatedAt: task.updatedAt.toISOString(),
+      assignee: task.assignee
+        ? {
+            id: task.assignee.id,
+            name: task.assignee.name,
+            email: task.assignee.email,
+            isActive: task.assignee.isActive,
+            createdAt: task.assignee.createdAt.toISOString(),
+            updatedAt: task.assignee.updatedAt.toISOString(),
+          }
+        : null,
     })),
   };
 }
@@ -276,58 +435,114 @@ export async function getServiceCheckById(
 export async function createCheckTask(
   trackingNumber: string,
   checkId: string,
-  title: string,
+  payload: {
+    title: string;
+    description?: string;
+    status?: string;
+    priority?: string;
+    dueDate?: string | null;
+    notes?: string;
+    assigneeId?: string | null;
+    publicStepNumber?: number | string | null;
+  },
 ) {
-  const order = await getRequiredOrder(trackingNumber);
-  const orderProgressId = await getProgressIdByTrackingNumber(order.trackingNumber);
-
-  const check = await prisma.checkTypeProgress.findFirst({
-    where: { id: checkId, orderProgressId },
-    include: { tasks: { select: { id: true } } },
+  const check = await getCheckForOrder(trackingNumber, checkId);
+  const taskCount = await prisma.checkTask.count({
+    where: { checkTypeProgressId: check.id },
   });
+  const title = payload.title.trim();
 
-  if (!check) throw new AdminTrackingError("Service check not found.");
+  if (!title) {
+    throw new AdminTrackingError("Task title cannot be empty.");
+  }
 
-  const trimmed = title.trim();
-  if (!trimmed) throw new AdminTrackingError("Task title cannot be empty.");
+  const assigneeId = await validateAssigneeId(payload.assigneeId);
+  const publicStepNumber = await validatePublicStepNumber({
+    trackingNumber,
+    publicStepNumber: parsePublicStepNumber(payload.publicStepNumber),
+  });
 
   await prisma.checkTask.create({
     data: {
-      checkTypeProgressId: checkId,
-      title: trimmed,
-      sortOrder: check.tasks.length,
+      checkTypeProgressId: check.id,
+      title,
+      description: payload.description?.trim() || null,
+      status:
+        payload.status !== undefined ? parseProgressStatus(payload.status) : "QUEUED",
+      priority:
+        payload.priority !== undefined ? parseTaskPriority(payload.priority) : "MEDIUM",
+      publicStepNumber,
+      dueDate: parseDueDate(payload.dueDate),
+      notes: payload.notes?.trim() || null,
+      assigneeId,
+      sortOrder: taskCount,
     },
   });
+
+  await syncCheckProgressRollups(check.id);
 }
 
 export async function updateCheckTask(
   trackingNumber: string,
   checkId: string,
   taskId: string,
-  payload: { status?: string; notes?: string; title?: string },
+  payload: {
+    status?: string;
+    notes?: string;
+    title?: string;
+    description?: string;
+    priority?: string;
+    dueDate?: string | null;
+    assigneeId?: string | null;
+    publicStepNumber?: number | string | null;
+  },
 ) {
-  const order = await getRequiredOrder(trackingNumber);
-  const orderProgressId = await getProgressIdByTrackingNumber(order.trackingNumber);
-
-  const check = await prisma.checkTypeProgress.findFirst({
-    where: { id: checkId, orderProgressId },
-  });
-  if (!check) throw new AdminTrackingError("Service check not found.");
+  const check = await getCheckForOrder(trackingNumber, checkId);
 
   const task = await prisma.checkTask.findFirst({
-    where: { id: taskId, checkTypeProgressId: checkId },
+    where: { id: taskId, checkTypeProgressId: check.id },
   });
-  if (!task) throw new AdminTrackingError("Task not found.");
+
+  if (!task) {
+    throw new AdminTrackingError("Task not found.");
+  }
+
+  const assigneeId =
+    payload.assigneeId !== undefined
+      ? await validateAssigneeId(payload.assigneeId)
+      : undefined;
+  const publicStepNumber =
+    payload.publicStepNumber !== undefined
+      ? await validatePublicStepNumber({
+          trackingNumber,
+          taskId,
+          publicStepNumber: parsePublicStepNumber(payload.publicStepNumber),
+        })
+      : undefined;
 
   await prisma.checkTask.update({
     where: { id: taskId },
     data: {
       status:
         payload.status !== undefined ? parseProgressStatus(payload.status) : undefined,
-      notes: payload.notes !== undefined ? payload.notes : undefined,
+      notes: payload.notes !== undefined ? payload.notes || null : undefined,
       title: payload.title?.trim() ? payload.title.trim() : undefined,
+      description:
+        payload.description !== undefined
+          ? payload.description.trim() || null
+          : undefined,
+      priority:
+        payload.priority !== undefined
+          ? parseTaskPriority(payload.priority)
+          : undefined,
+      publicStepNumber,
+      dueDate:
+        payload.dueDate !== undefined ? parseDueDate(payload.dueDate) : undefined,
+      assigneeId,
     },
   });
+
+  await syncCheckProgressRollups(check.id);
 }
 
 export async function deleteCheckTask(
@@ -335,17 +550,13 @@ export async function deleteCheckTask(
   checkId: string,
   taskId: string,
 ) {
-  const order = await getRequiredOrder(trackingNumber);
-  const orderProgressId = await getProgressIdByTrackingNumber(order.trackingNumber);
-
-  const check = await prisma.checkTypeProgress.findFirst({
-    where: { id: checkId, orderProgressId },
-  });
-  if (!check) throw new AdminTrackingError("Service check not found.");
+  const check = await getCheckForOrder(trackingNumber, checkId);
 
   await prisma.checkTask.deleteMany({
-    where: { id: taskId, checkTypeProgressId: checkId },
+    where: { id: taskId, checkTypeProgressId: check.id },
   });
+
+  await syncCheckProgressRollups(check.id);
 }
 
 export async function reorderCheckTasks(
@@ -353,22 +564,18 @@ export async function reorderCheckTasks(
   checkId: string,
   orderedIds: string[],
 ) {
-  const order = await getRequiredOrder(trackingNumber);
-  const orderProgressId = await getProgressIdByTrackingNumber(order.trackingNumber);
-
-  const check = await prisma.checkTypeProgress.findFirst({
-    where: { id: checkId, orderProgressId },
-  });
-  if (!check) throw new AdminTrackingError("Service check not found.");
+  const check = await getCheckForOrder(trackingNumber, checkId);
 
   await Promise.all(
     orderedIds.map((id, index) =>
       prisma.checkTask.updateMany({
-        where: { id, checkTypeProgressId: checkId },
+        where: { id, checkTypeProgressId: check.id },
         data: { sortOrder: index },
       }),
     ),
   );
+
+  await syncCheckProgressRollups(check.id);
 }
 
 export async function getProgressOnly(trackingNumber: string) {

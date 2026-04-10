@@ -70,7 +70,7 @@ export default function Badge({
 
   if (variant === "dot") {
     return (
-      <span className="inline-flex items-center gap-1.5 rounded-full border border-primary-fixed-dim bg-primary-fixed px-3 py-1 text-[10px] font-bold uppercase tracking-widest text-[color:var(--color-on-primary-fixed)]">
+      <span className="inline-flex items-center gap-1.5 border border-primary-fixed-dim bg-primary-fixed px-3 py-1 text-[10px] font-bold uppercase tracking-widest text-[color:var(--color-on-primary-fixed)]">
         <span
           className={["w-1.5 h-1.5 rounded-full animate-pulse", config.dotColor]
             .filter(Boolean)
@@ -84,7 +84,7 @@ export default function Badge({
   return (
     <span
       className={[
-        "inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium tracking-wide uppercase",
+        "inline-flex items-center px-2.5 py-0.5 text-xs font-medium tracking-wide uppercase",
         config.classes,
         className,
       ]

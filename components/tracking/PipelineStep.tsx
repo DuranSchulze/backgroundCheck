@@ -65,7 +65,7 @@ export default function PipelineStep({
   isLast = false,
 }: PipelineStepProps) {
   return (
-    <div className="flex gap-8 pb-12 relative last:pb-0">
+    <div className="relative flex gap-5 pb-9 last:pb-0 md:gap-6 md:pb-10">
       {!isLast && (
         <div className="absolute left-4 top-8 bottom-0 w-[2px] bg-primary-fixed"></div>
       )}
@@ -78,10 +78,10 @@ export default function PipelineStep({
         {iconByStatus[status]}
       </div>
       <div className="flex-1">
-        <div className="flex justify-between items-baseline mb-1">
+        <div className="mb-1 flex flex-col gap-2 sm:flex-row sm:items-baseline sm:justify-between">
           <h4
             className={[
-              "font-headline font-bold",
+              "font-headline text-base font-bold",
               textColorByStatus[status],
             ].join(" ")}
           >
@@ -99,7 +99,7 @@ export default function PipelineStep({
         </div>
         <p
           className={[
-            "text-sm leading-relaxed",
+            "text-sm leading-6",
             descriptionColorByStatus[status],
           ].join(" ")}
         >

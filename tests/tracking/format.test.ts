@@ -6,6 +6,7 @@ import {
 } from "@/lib/tracking/format";
 import type {
   CheckProgressView,
+  CheckTaskView,
   OrderProgressSummary,
   SheetOrderSnapshot,
 } from "@/lib/tracking/types";
@@ -37,6 +38,7 @@ test("buildTrackingRecord returns queued defaults when the sheet exists but no P
     order,
     progress: null,
     checks: [],
+    tasks: [],
     activities: [],
   });
 
@@ -61,7 +63,8 @@ test("buildTrackingRecord merges overall progress, check progress, and activitie
   const checks: CheckProgressView[] = [
     {
       id: "check-1",
-      checkName: "Individual & Identity Checks",
+      serviceKey: "IDENTITY_CHECKS",
+      serviceLabel: "Individual & Identity Checks",
       status: "COMPLETED",
       timelineLabel: "Completed Apr 1",
       notes: "Identity packet verified.",
@@ -71,7 +74,8 @@ test("buildTrackingRecord merges overall progress, check progress, and activitie
     },
     {
       id: "check-2",
-      checkName: "Verification Services",
+      serviceKey: "VERIFICATION_SERVICES",
+      serviceLabel: "Verification Services",
       status: "ACTIVE_INVESTIGATION",
       timelineLabel: "Expected Apr 12",
       notes: "Employer outreach in progress.",
@@ -85,6 +89,7 @@ test("buildTrackingRecord merges overall progress, check progress, and activitie
     order,
     progress,
     checks,
+    tasks: [],
     activities: [
       {
         id: "activity-1",
@@ -100,7 +105,85 @@ test("buildTrackingRecord merges overall progress, check progress, and activitie
   assert.equal(record.percent, 75);
   assert.equal(record.pipelineSteps[0]?.status, "completed");
   assert.equal(record.pipelineSteps[1]?.status, "in-progress");
+  assert.equal(record.checks[0]?.label, "Individual & Identity Checks");
+  assert.equal(record.checks[0]?.overall, "Completed");
+  assert.equal(record.checks[0]?.remarks, "Identity packet verified.");
   assert.equal(record.recentActivity[0]?.highlight, "Acme HR");
+});
+
+test("buildTrackingRecord prefers numbered public tasks for pipeline steps", () => {
+  const tasks: CheckTaskView[] = [
+    {
+      id: "task-2",
+      checkId: "check-2",
+      serviceKey: "VERIFICATION_SERVICES",
+      serviceLabel: "Verification Services",
+      title: "Confirm employer response",
+      description: "Waiting for employer confirmation.",
+      status: "ACTIVE_INVESTIGATION",
+      priority: "HIGH",
+      publicStepNumber: 2,
+      dueDate: null,
+      notes: null,
+      sortOrder: 1,
+      createdAt: new Date("2026-04-02T10:00:00.000Z").toISOString(),
+      updatedAt: new Date("2026-04-02T10:00:00.000Z").toISOString(),
+      assignee: null,
+    },
+    {
+      id: "task-1",
+      checkId: "check-1",
+      serviceKey: "IDENTITY_CHECKS",
+      serviceLabel: "Individual & Identity Checks",
+      title: "Verify government ID",
+      description: "",
+      status: "COMPLETED",
+      priority: "MEDIUM",
+      publicStepNumber: 1,
+      dueDate: null,
+      notes: "Government ID already matched.",
+      sortOrder: 0,
+      createdAt: new Date("2026-04-01T10:00:00.000Z").toISOString(),
+      updatedAt: new Date("2026-04-01T10:00:00.000Z").toISOString(),
+      assignee: null,
+    },
+    {
+      id: "task-internal",
+      checkId: "check-2",
+      serviceKey: "VERIFICATION_SERVICES",
+      serviceLabel: "Verification Services",
+      title: "Internal note task",
+      description: "Should not show publicly.",
+      status: "IN_PROGRESS",
+      priority: "LOW",
+      publicStepNumber: null,
+      dueDate: null,
+      notes: null,
+      sortOrder: 2,
+      createdAt: new Date("2026-04-02T11:00:00.000Z").toISOString(),
+      updatedAt: new Date("2026-04-02T11:00:00.000Z").toISOString(),
+      assignee: null,
+    },
+  ];
+
+  const record = buildTrackingRecord({
+    order,
+    progress: null,
+    checks: [],
+    tasks,
+    activities: [],
+  });
+
+  assert.equal(record.pipelineSteps.length, 2);
+  assert.equal(record.pipelineSteps[0]?.title, "Step #1 · Verify government ID");
+  assert.equal(record.pipelineSteps[0]?.status, "completed");
+  assert.equal(record.pipelineSteps[0]?.description, "Government ID already matched.");
+  assert.equal(record.pipelineSteps[1]?.title, "Step #2 · Confirm employer response");
+  assert.equal(record.pipelineSteps[1]?.status, "in-progress");
+  assert.equal(record.checks[0]?.tasks[0]?.label, "#1");
+  assert.equal(record.checks[0]?.tasks[0]?.remarks, "Government ID already matched.");
+  assert.equal(record.checks[1]?.tasks[0]?.label, "#2");
+  assert.equal(record.checks[1]?.tasks[0]?.status, "Active Investigation");
 });
 
 test("buildTrackingSample reflects the live order with fallback naming", () => {

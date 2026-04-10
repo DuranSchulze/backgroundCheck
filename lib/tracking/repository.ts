@@ -6,7 +6,10 @@ import {
 } from "@/lib/tracking/google-sheets";
 import { buildTrackingRecord, buildTrackingSample } from "@/lib/tracking/format";
 import { normalizeReferenceNumber } from "@/lib/tracking/normalize";
-import { getOrderProgressByTrackingNumber } from "@/lib/tracking/progress";
+import {
+  getOrderProgressByTrackingNumber,
+  getOrderWorkflowTasks,
+} from "@/lib/tracking/progress";
 import type { TrackingRecord, TrackingSample } from "@/lib/tracking/types";
 
 type DataSource = "mock" | "google-sheets";
@@ -14,9 +17,18 @@ type DataSource = "mock" | "google-sheets";
 class TrackingConfigError extends Error {}
 
 function getDataSource(): DataSource {
-  return process.env.TRACKING_DATA_SOURCE === "google-sheets"
-    ? "google-sheets"
-    : "mock";
+  if (process.env.TRACKING_DATA_SOURCE === "mock") {
+    return "mock";
+  }
+
+  if (
+    process.env.TRACKING_DATA_SOURCE === "google-sheets" ||
+    process.env.GOOGLE_SHEETS_SPREADSHEET_ID?.trim()
+  ) {
+    return "google-sheets";
+  }
+
+  return "mock";
 }
 
 function mapToSample(record: TrackingRecord): TrackingSample {
@@ -51,11 +63,13 @@ async function findGoogleSheetsRecord(referenceNumber: string) {
   }
 
   const progressData = await getOrderProgressByTrackingNumber(order.trackingNumber);
+  const tasks = await getOrderWorkflowTasks(order.trackingNumber);
 
   return buildTrackingRecord({
     order,
     progress: progressData.progress,
     checks: progressData.checks,
+    tasks,
     activities: progressData.activities,
   });
 }

@@ -6,7 +6,7 @@ interface RequestMetadataProps {
 
 export default function RequestMetadata({ fields }: RequestMetadataProps) {
   return (
-    <div className="rounded-[1.75rem] border border-amber-200 bg-white p-8 sm:p-10">
+    <div>
       <div className="grid grid-cols-2 gap-y-8 gap-x-12">
         {fields.map((field) => (
           <div key={field.label}>

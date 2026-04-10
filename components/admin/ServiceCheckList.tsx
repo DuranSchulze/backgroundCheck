@@ -65,7 +65,7 @@ export default function ServiceCheckList({
           <button
             onClick={handleSync}
             disabled={isPending}
-            className="inline-flex items-center gap-2 rounded-full border border-[#f0ca52] bg-primary px-5 py-2.5 text-xs font-bold uppercase tracking-[0.18em] text-[color:var(--color-on-primary)] transition hover:bg-primary-container disabled:opacity-50"
+            className="inline-flex items-center gap-2 border border-[#f0ca52] bg-primary px-5 py-2.5 text-xs font-bold uppercase tracking-[0.18em] text-on-primary transition hover:bg-primary-container hover:text-on-primary-container disabled:opacity-50"
           >
             {isPending ? "Syncing…" : "Sync Checks from Sheet"}
           </button>
@@ -78,7 +78,7 @@ export default function ServiceCheckList({
   return (
     <div className="mt-5 space-y-2">
       {error ? (
-        <p className="rounded-xl bg-red-50 px-4 py-2 text-xs text-red-600">
+        <p className="border border-error/30 bg-error-container px-4 py-2 text-xs text-error">
           {error}
         </p>
       ) : null}
@@ -87,11 +87,11 @@ export default function ServiceCheckList({
         <Link
           key={check.id}
           href={`/admin/orders/${encodeURIComponent(trackingNumber)}/checks/${check.id}`}
-          className="group flex items-center justify-between gap-4 rounded-2xl border border-amber-100 bg-[#fffaf0] px-5 py-4 transition hover:border-primary hover:bg-white"
+          className="group flex items-center justify-between gap-4 border border-outline-variant/20 bg-surface-container-low px-5 py-4 transition hover:border-primary hover:bg-white"
         >
           <div className="min-w-0 flex-1">
             <p className="truncate text-sm font-semibold text-on-surface">
-              {check.checkName}
+              {check.serviceLabel}
             </p>
             {check.notes ? (
               <p className="mt-0.5 truncate text-xs text-outline">

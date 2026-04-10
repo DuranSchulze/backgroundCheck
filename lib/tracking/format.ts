@@ -3,15 +3,19 @@ import type {
   CheckCategory,
   CheckProgressStatus,
   CheckProgressView,
+  CheckTaskView,
   MetadataField,
   OrderProgressSummary,
   PipelineStepData,
   ProgressActivityView,
   SheetOrderSnapshot,
+  TrackingCheckDetail,
   TrackingRecord,
   TrackingSample,
   TrackingStatus,
+  TrackingTaskDetail,
 } from "@/lib/tracking/types";
+import { formatReferenceNumberForDisplay } from "@/lib/tracking/normalize";
 
 const CHECK_CATEGORY_LABELS: Record<CheckCategory, string> = {
   IDENTITY_CHECKS: "Individual & Identity Checks",
@@ -39,6 +43,123 @@ function formatAddress(order: SheetOrderSnapshot) {
   ]
     .filter(Boolean)
     .join(", ");
+}
+
+function buildTaskStepDescription(task: CheckTaskView) {
+  return (
+    task.description ||
+    task.notes ||
+    `This task is being tracked under ${task.serviceLabel}.`
+  );
+}
+
+function formatProgressStatusLabel(status: CheckProgressStatus) {
+  return status
+    .replaceAll("_", " ")
+    .toLowerCase()
+    .replace(/\b\w/g, (letter) => letter.toUpperCase());
+}
+
+function buildTrackingTaskLabel(task: CheckTaskView, index: number) {
+  if (task.publicStepNumber !== null) {
+    return `#${task.publicStepNumber}`;
+  }
+
+  if (task.sortOrder !== null) {
+    return `#${task.sortOrder + 1}`;
+  }
+
+  return `#${index + 1}`;
+}
+
+function buildTrackingTaskRemarks(task: CheckTaskView) {
+  return task.notes || task.description || null;
+}
+
+export function buildCheckBreakdown(
+  checks: CheckProgressView[],
+  tasks: CheckTaskView[] = [],
+): TrackingCheckDetail[] {
+  const sortedChecks =
+    checks.length > 0
+      ? [...checks].sort((left, right) => {
+          const leftOrder = left.sortOrder ?? Number.MAX_SAFE_INTEGER;
+          const rightOrder = right.sortOrder ?? Number.MAX_SAFE_INTEGER;
+
+          return (
+            leftOrder - rightOrder || left.serviceLabel.localeCompare(right.serviceLabel)
+          );
+        })
+      : Array.from(
+          tasks.reduce<Map<string, CheckProgressView>>((accumulator, task) => {
+            if (!accumulator.has(task.checkId)) {
+              accumulator.set(task.checkId, {
+                id: task.checkId,
+                serviceKey: task.serviceKey,
+                serviceLabel: task.serviceLabel,
+                status: task.status,
+                timelineLabel: null,
+                notes: null,
+                sortOrder: null,
+                createdAt: task.createdAt,
+                updatedAt: task.updatedAt,
+              });
+            }
+
+            return accumulator;
+          }, new Map()).values(),
+        ).sort((left, right) => {
+          const leftMinStep = Math.min(
+            ...tasks
+              .filter((task) => task.checkId === left.id)
+              .map((task) => task.publicStepNumber ?? Number.MAX_SAFE_INTEGER),
+          );
+          const rightMinStep = Math.min(
+            ...tasks
+              .filter((task) => task.checkId === right.id)
+              .map((task) => task.publicStepNumber ?? Number.MAX_SAFE_INTEGER),
+          );
+
+          if (leftMinStep !== rightMinStep) {
+            return leftMinStep - rightMinStep;
+          }
+
+          return left.serviceLabel.localeCompare(right.serviceLabel);
+        });
+
+  return sortedChecks.map((check) => {
+    const checkTasks = tasks
+      .filter((task) => task.checkId === check.id)
+      .sort((left, right) => {
+        const leftPublic = left.publicStepNumber ?? Number.MAX_SAFE_INTEGER;
+        const rightPublic = right.publicStepNumber ?? Number.MAX_SAFE_INTEGER;
+
+        if (leftPublic !== rightPublic) {
+          return leftPublic - rightPublic;
+        }
+
+        const leftOrder = left.sortOrder ?? Number.MAX_SAFE_INTEGER;
+        const rightOrder = right.sortOrder ?? Number.MAX_SAFE_INTEGER;
+
+        return leftOrder - rightOrder || left.title.localeCompare(right.title);
+      });
+
+    const taskDetails: TrackingTaskDetail[] = checkTasks.map((task, index) => ({
+      id: task.id,
+      label: buildTrackingTaskLabel(task, index),
+      title: task.title,
+      status: formatProgressStatusLabel(task.status),
+      remarks: buildTrackingTaskRemarks(task),
+    }));
+
+    return {
+      id: check.id,
+      label: check.serviceLabel,
+      overall: formatProgressStatusLabel(check.status),
+      remarks: check.notes || check.timelineLabel || null,
+      tasks: taskDetails,
+    };
+  });
 }
 
 export function getCheckCategoryLabel(checkType: CheckCategory) {
@@ -108,7 +229,10 @@ export function mapCheckStatusToPipelineStatus(
 
 export function buildTrackingMetadata(order: SheetOrderSnapshot): MetadataField[] {
   return [
-    { label: "Tracking Number", value: order.trackingNumber },
+    {
+      label: "Tracking Number",
+      value: formatReferenceNumberForDisplay(order.trackingNumber),
+    },
     { label: "Subject Name", value: order.subjectName || "Not provided" },
     { label: "Submitted By", value: order.submitterName || "Not provided" },
     { label: "Purpose", value: order.purpose || "Not provided" },
@@ -137,13 +261,40 @@ export function buildTrackingMetadata(order: SheetOrderSnapshot): MetadataField[
 export function buildPipelineSteps(
   order: SheetOrderSnapshot,
   checks: CheckProgressView[],
+  tasks: CheckTaskView[] = [],
 ): PipelineStepData[] {
+  const numberedTasks = [...tasks]
+    .filter((task) => task.publicStepNumber !== null)
+    .sort((left, right) => {
+      const leftStep = left.publicStepNumber ?? Number.MAX_SAFE_INTEGER;
+      const rightStep = right.publicStepNumber ?? Number.MAX_SAFE_INTEGER;
+
+      if (leftStep !== rightStep) {
+        return leftStep - rightStep;
+      }
+
+      const leftOrder = left.sortOrder ?? Number.MAX_SAFE_INTEGER;
+      const rightOrder = right.sortOrder ?? Number.MAX_SAFE_INTEGER;
+
+      return leftOrder - rightOrder || left.title.localeCompare(right.title);
+    });
+
+  if (numberedTasks.length > 0) {
+    return numberedTasks.map((task) => ({
+      id: task.id,
+      title: `Step #${task.publicStepNumber} · ${task.title}`,
+      description: buildTaskStepDescription(task),
+      status: mapCheckStatusToPipelineStatus(task.status),
+    }));
+  }
+
   const selectedChecks =
     checks.length > 0
       ? checks
       : order.selectedCheckCategories.map((checkType, index) => ({
           id: `generated-${checkType}`,
-          checkName: getCheckCategoryLabel(checkType),
+          serviceKey: checkType,
+          serviceLabel: getCheckCategoryLabel(checkType),
           status: "QUEUED" as const,
           timelineLabel: null,
           notes: null,
@@ -154,7 +305,7 @@ export function buildPipelineSteps(
 
   return selectedChecks.map((check) => ({
     id: check.id,
-    title: check.checkName,
+    title: check.serviceLabel,
     description:
       check.notes ||
       check.timelineLabel ||
@@ -165,7 +316,7 @@ export function buildPipelineSteps(
 
 export function calculateProgressPercent(
   overallStatus: OrderProgressSummary | null,
-  checks: CheckProgressView[],
+  checks: Array<Pick<CheckProgressView, "status">>,
 ) {
   if (checks.length > 0) {
     const completed = checks.filter((check) => check.status === "COMPLETED").length;
@@ -192,6 +343,19 @@ export function calculateProgressPercent(
   }
 }
 
+export function sortTasksByBoardPriority(tasks: CheckTaskView[]) {
+  return [...tasks].sort((left, right) => {
+    const leftOrder = left.sortOrder ?? Number.MAX_SAFE_INTEGER;
+    const rightOrder = right.sortOrder ?? Number.MAX_SAFE_INTEGER;
+
+    if (left.status !== right.status) {
+      return left.status.localeCompare(right.status);
+    }
+
+    return leftOrder - rightOrder || left.title.localeCompare(right.title);
+  });
+}
+
 export function buildSummary(
   order: SheetOrderSnapshot,
   progress: OrderProgressSummary | null,
@@ -207,7 +371,7 @@ export function buildSummary(
         } included in this request.`
       : "No verification categories were marked on the intake row yet.";
 
-  return `${checksSummary} This order is being managed under tracking number ${order.trackingNumber}.`;
+  return `${checksSummary} This order is being managed under tracking number ${formatReferenceNumberForDisplay(order.trackingNumber)}.`;
 }
 
 export function buildActivityFeed(
@@ -242,20 +406,26 @@ export function buildTrackingRecord(params: {
   order: SheetOrderSnapshot;
   progress: OrderProgressSummary | null;
   checks: CheckProgressView[];
+  tasks?: CheckTaskView[];
   activities: ProgressActivityView[];
 }): TrackingRecord {
   const status = mapProgressStatusToTrackingStatus(params.progress?.overallStatus ?? null);
   const percent = calculateProgressPercent(params.progress, params.checks);
 
   return {
-    referenceNumber: params.order.trackingNumber,
+    referenceNumber: formatReferenceNumberForDisplay(params.order.trackingNumber),
     status,
     title: TRACKING_STATUS_LABELS[status],
     expectedCompletion: params.progress?.etaLabel || "Awaiting admin schedule",
     percent,
     summary: buildSummary(params.order, params.progress),
     metadataFields: buildTrackingMetadata(params.order),
-    pipelineSteps: buildPipelineSteps(params.order, params.checks),
+    pipelineSteps: buildPipelineSteps(
+      params.order,
+      params.checks,
+      params.tasks ?? [],
+    ),
+    checks: buildCheckBreakdown(params.checks, params.tasks ?? []),
     recentActivity: buildActivityFeed(params.order, params.activities),
   };
 }
@@ -267,7 +437,7 @@ export function buildTrackingSample(params: {
   const status = mapProgressStatusToTrackingStatus(params.progress?.overallStatus ?? null);
 
   return {
-    referenceNumber: params.order.trackingNumber,
+    referenceNumber: formatReferenceNumberForDisplay(params.order.trackingNumber),
     status,
     title:
       params.order.subjectName ||

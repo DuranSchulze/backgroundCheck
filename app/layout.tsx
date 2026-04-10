@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Inter, Manrope } from "next/font/google";
 import { GooeyToaster } from "@/components/ui/goey-toaster";
+import { TooltipProvider } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 import "./globals.css";
 
@@ -29,8 +30,10 @@ export default function RootLayout({
   return (
     <html lang="en" className={cn(inter.variable, manrope.variable)}>
       <body className="min-h-screen bg-surface text-on-surface antialiased selection:bg-primary-fixed selection:text-primary">
-        {children}
-        <GooeyToaster />
+        <TooltipProvider>
+          {children}
+          <GooeyToaster />
+        </TooltipProvider>
       </body>
     </html>
   );

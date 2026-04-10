@@ -31,7 +31,7 @@ export async function actionInitializeChecks(trackingNumber: string) {
 export async function actionUpdateServiceCheck(
   trackingNumber: string,
   checkId: string,
-  payload: { status?: string; notes?: string },
+  payload: { status?: string; notes?: string; timelineLabel?: string },
 ) {
   try {
     await updateServiceCheck(trackingNumber, checkId, payload);
@@ -66,14 +66,24 @@ function checkPath(trackingNumber: string, checkId: string) {
 export async function actionCreateCheckTask(
   trackingNumber: string,
   checkId: string,
-  title: string,
+  payload: {
+    title: string;
+    description?: string;
+    status?: string;
+    priority?: string;
+    dueDate?: string | null;
+    notes?: string;
+    assigneeId?: string | null;
+    publicStepNumber?: number | string | null;
+  },
 ) {
   try {
-    await createCheckTask(trackingNumber, checkId, title);
+    await createCheckTask(trackingNumber, checkId, payload);
   } catch (err) {
     if (err instanceof AdminTrackingError) return { error: err.message };
     throw err;
   }
+  revalidatePath(orderPath(trackingNumber));
   revalidatePath(checkPath(trackingNumber, checkId));
 }
 
@@ -81,7 +91,16 @@ export async function actionUpdateCheckTask(
   trackingNumber: string,
   checkId: string,
   taskId: string,
-  payload: { status?: string; notes?: string; title?: string },
+  payload: {
+    status?: string;
+    notes?: string;
+    title?: string;
+    description?: string;
+    priority?: string;
+    dueDate?: string | null;
+    assigneeId?: string | null;
+    publicStepNumber?: number | string | null;
+  },
 ) {
   try {
     await updateCheckTask(trackingNumber, checkId, taskId, payload);
@@ -89,6 +108,7 @@ export async function actionUpdateCheckTask(
     if (err instanceof AdminTrackingError) return { error: err.message };
     throw err;
   }
+  revalidatePath(orderPath(trackingNumber));
   revalidatePath(checkPath(trackingNumber, checkId));
 }
 
@@ -103,6 +123,7 @@ export async function actionDeleteCheckTask(
     if (err instanceof AdminTrackingError) return { error: err.message };
     throw err;
   }
+  revalidatePath(orderPath(trackingNumber));
   revalidatePath(checkPath(trackingNumber, checkId));
 }
 
@@ -117,5 +138,6 @@ export async function actionReorderCheckTasks(
     if (err instanceof AdminTrackingError) return { error: err.message };
     throw err;
   }
+  revalidatePath(orderPath(trackingNumber));
   revalidatePath(checkPath(trackingNumber, checkId));
 }

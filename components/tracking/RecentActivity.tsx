@@ -6,7 +6,7 @@ interface RecentActivityProps {
 
 export default function RecentActivity({ items }: RecentActivityProps) {
   return (
-    <div className="rounded-[1.75rem] border border-amber-200 bg-white p-6">
+    <div>
       <h3 className="mb-4 text-xs font-bold uppercase tracking-widest text-outline">
         Recent Activity
       </h3>

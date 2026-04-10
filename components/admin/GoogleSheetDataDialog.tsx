@@ -31,7 +31,7 @@ export default function GoogleSheetDataDialog({
             variant="outline"
             size="icon-sm"
             title="View Google Sheet data"
-            className="shrink-0 border-amber-200 bg-[#fffaf0] text-outline hover:border-primary hover:bg-white hover:text-on-surface"
+            className="shrink-0 border-outline-variant/30 bg-surface-container-low text-outline hover:border-primary hover:bg-white hover:text-on-surface"
           >
             <Maximize2Icon className="size-4" />
             <span className="sr-only">View Sheet Data</span>
@@ -41,7 +41,7 @@ export default function GoogleSheetDataDialog({
             type="button"
             variant="outline"
             size="sm"
-            className="mt-5 inline-flex items-center gap-2 border-amber-200 bg-[#fffaf0] text-on-surface hover:bg-amber-50"
+            className="mt-5 inline-flex items-center gap-2 border-outline-variant/30 bg-surface-container-low text-on-surface hover:bg-surface-container"
           >
             <MoreHorizontalIcon className="size-4" />
             Show more
@@ -50,7 +50,7 @@ export default function GoogleSheetDataDialog({
       </DialogTrigger>
 
       <DialogContent className="max-h-[85vh] max-w-4xl gap-4 overflow-hidden p-0 sm:max-w-4xl">
-        <DialogHeader className="border-b border-amber-100 px-6 py-5">
+        <DialogHeader className="border-b border-outline-variant/20 px-6 py-5">
           <DialogTitle className="text-xl text-on-surface">
             Full Google Sheet Data
           </DialogTitle>
@@ -68,7 +68,7 @@ export default function GoogleSheetDataDialog({
               return (
                 <div
                   key={rawLabel}
-                  className="overflow-x-auto rounded-xl border border-amber-100 bg-[#fffaf0] px-4 py-3"
+                  className="overflow-x-auto border border-outline-variant/20 bg-surface-container-low px-4 py-3"
                 >
                   <div className="min-w-max whitespace-nowrap text-sm text-on-surface-variant">
                     <span className="font-bold uppercase tracking-[0.16em] text-outline">

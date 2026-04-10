@@ -1,288 +1,948 @@
 "use client";
 
-import { useTransition, useState, useRef } from "react";
+import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import {
+  CalendarDays,
+  GripVertical,
+  Pencil,
+  Trash2,
+  UserRound,
+} from "lucide-react";
+import {
   actionCreateCheckTask,
-  actionUpdateCheckTask,
   actionDeleteCheckTask,
   actionReorderCheckTasks,
+  actionUpdateCheckTask,
 } from "@/app/actions/service-checks";
-import type { CheckProgressStatus } from "@/lib/tracking/types";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import type {
+  CheckProgressStatus,
+  CheckTaskView,
+  StaffUserView,
+  TaskPriority,
+} from "@/lib/tracking/types";
 
-const STATUS_OPTIONS: { value: CheckProgressStatus; label: string; color: string }[] = [
-  { value: "QUEUED", label: "Queued", color: "bg-surface-container-high text-outline border-outline-variant" },
-  { value: "IN_PROGRESS", label: "Ongoing", color: "bg-primary text-[color:var(--color-on-primary)] border-primary" },
-  { value: "ACTIVE_INVESTIGATION", label: "Investigating", color: "bg-[#fff0cf] text-[#8a5207] border-[#eec07c]" },
-  { value: "COMPLETED", label: "Done", color: "bg-[#fff7da] text-[color:var(--color-on-primary-fixed)] border-[#e8d28c]" },
-  { value: "ON_HOLD", label: "On Hold", color: "bg-surface-container-high text-outline border-outline-variant" },
+const STATUS_COLUMNS: Array<{
+  value: CheckProgressStatus;
+  label: string;
+  tone: string;
+  accent: string;
+}> = [
+  {
+    value: "QUEUED",
+    label: "Backlog",
+    tone: "border-slate-200 bg-slate-50/90",
+    accent: "bg-slate-500",
+  },
+  {
+    value: "IN_PROGRESS",
+    label: "In Progress",
+    tone: "border-sky-200 bg-sky-50/90",
+    accent: "bg-sky-500",
+  },
+  {
+    value: "ACTIVE_INVESTIGATION",
+    label: "Investigating",
+    tone: "border-violet-200 bg-violet-50/90",
+    accent: "bg-violet-500",
+  },
+  {
+    value: "ON_HOLD",
+    label: "Blocked",
+    tone: "border-amber-200 bg-amber-50/90",
+    accent: "bg-amber-500",
+  },
+  {
+    value: "COMPLETED",
+    label: "Done",
+    tone: "border-emerald-200 bg-emerald-50/90",
+    accent: "bg-emerald-500",
+  },
 ];
 
-function statusStyle(status: string) {
-  return STATUS_OPTIONS.find((o) => o.value === status)?.color ??
-    "bg-surface-container-high text-outline border-outline-variant";
-}
+const PRIORITY_OPTIONS: TaskPriority[] = ["LOW", "MEDIUM", "HIGH", "URGENT"];
 
-function statusLabel(status: string) {
-  return STATUS_OPTIONS.find((o) => o.value === status)?.label ?? status;
-}
-
-export interface TaskView {
-  id: string;
-  title: string;
-  status: CheckProgressStatus;
-  notes: string | null;
-  sortOrder: number | null;
-  createdAt: string;
-  updatedAt: string;
-}
-
-interface CheckTaskListProps {
+type CheckTaskListProps = {
   trackingNumber: string;
   checkId: string;
-  initialTasks: TaskView[];
+  initialTasks: CheckTaskView[];
+  staff: StaffUserView[];
+  fullScreen?: boolean;
+};
+
+type TaskDraft = Record<
+  string,
+  {
+    title: string;
+    description: string;
+    notes: string;
+    assigneeId: string;
+    priority: TaskPriority;
+    publicStepNumber: string;
+    dueDate: string;
+  }
+>;
+
+type DragState = {
+  taskId: string;
+  overStatus: CheckProgressStatus | null;
+  beforeTaskId: string | null;
+} | null;
+
+function sortTasks(tasks: CheckTaskView[]) {
+  return [...tasks].sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0));
+}
+
+function createDraft(task: CheckTaskView) {
+  return {
+    title: task.title,
+    description: task.description ?? "",
+    notes: task.notes ?? "",
+    assigneeId: task.assignee?.id ?? "",
+    priority: task.priority,
+    publicStepNumber:
+      task.publicStepNumber !== null ? String(task.publicStepNumber) : "",
+    dueDate: task.dueDate?.slice(0, 10) ?? "",
+  };
+}
+
+function createDraftMap(tasks: CheckTaskView[]): TaskDraft {
+  return Object.fromEntries(tasks.map((task) => [task.id, createDraft(task)]));
+}
+
+function formatDateLabel(value: string | null) {
+  if (!value) {
+    return "No due date";
+  }
+
+  return new Date(value).toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  });
+}
+
+function formatBoardPosition(sortOrder: number | null) {
+  if (sortOrder === null) {
+    return "Unsorted";
+  }
+
+  return `#${sortOrder + 1}`;
+}
+
+function priorityTone(priority: TaskPriority) {
+  switch (priority) {
+    case "URGENT":
+      return "border-red-200 bg-red-50 text-red-700";
+    case "HIGH":
+      return "border-orange-200 bg-orange-50 text-orange-700";
+    case "MEDIUM":
+      return "border-sky-200 bg-sky-50 text-sky-700";
+    case "LOW":
+    default:
+      return "border-slate-200 bg-slate-50 text-slate-700";
+  }
+}
+
+function moveTaskToPosition(
+  tasks: CheckTaskView[],
+  taskId: string,
+  nextStatus: CheckProgressStatus,
+  beforeTaskId: string | null,
+) {
+  const sourceTask = tasks.find((task) => task.id === taskId);
+  if (!sourceTask) {
+    return tasks;
+  }
+
+  const remainingTasks = tasks.filter((task) => task.id !== taskId);
+  const nextTask = {
+    ...sourceTask,
+    status: nextStatus,
+  };
+
+  let insertionIndex = remainingTasks.length;
+
+  if (beforeTaskId) {
+    const beforeIndex = remainingTasks.findIndex(
+      (task) => task.id === beforeTaskId,
+    );
+    if (beforeIndex >= 0) {
+      insertionIndex = beforeIndex;
+    }
+  } else {
+    const matchingIndexes = remainingTasks.reduce<number[]>(
+      (indexes, task, index) => {
+        if (task.status === nextStatus) {
+          indexes.push(index);
+        }
+        return indexes;
+      },
+      [],
+    );
+
+    if (matchingIndexes.length > 0) {
+      insertionIndex = matchingIndexes[matchingIndexes.length - 1] + 1;
+    }
+  }
+
+  remainingTasks.splice(insertionIndex, 0, nextTask);
+
+  return remainingTasks.map((task, index) => ({
+    ...task,
+    sortOrder: index,
+  }));
 }
 
 export default function CheckTaskList({
   trackingNumber,
   checkId,
   initialTasks,
+  staff,
+  fullScreen = false,
 }: CheckTaskListProps) {
   const router = useRouter();
-  const [tasks, setTasks] = useState<TaskView[]>(
-    [...initialTasks].sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0)),
+  const inputRef = useRef<HTMLInputElement>(null);
+  const [tasks, setTasks] = useState<CheckTaskView[]>(() =>
+    sortTasks(initialTasks),
+  );
+  const [drafts, setDrafts] = useState<TaskDraft>(() =>
+    createDraftMap(initialTasks),
   );
   const [newTitle, setNewTitle] = useState("");
-  const [expandedId, setExpandedId] = useState<string | null>(null);
-  const [editingNotes, setEditingNotes] = useState<Record<string, string>>({});
+  const [newPriority, setNewPriority] = useState<TaskPriority>("MEDIUM");
+  const [newAssigneeId, setNewAssigneeId] = useState("");
+  const [newPublicStepNumber, setNewPublicStepNumber] = useState("");
+  const [newDueDate, setNewDueDate] = useState("");
+  const [editingTaskId, setEditingTaskId] = useState<string | null>(null);
+  const [dragState, setDragState] = useState<DragState>(null);
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
-  const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    setTasks(sortTasks(initialTasks));
+    setDrafts(createDraftMap(initialTasks));
+  }, [initialTasks]);
+
+  const activeStaff = useMemo(
+    () => staff.filter((member) => member.isActive),
+    [staff],
+  );
+
+  const tasksByStatus = useMemo(
+    () =>
+      STATUS_COLUMNS.map((column) => ({
+        ...column,
+        tasks: tasks.filter((task) => task.status === column.value),
+      })),
+    [tasks],
+  );
+
+  const editingTask = editingTaskId
+    ? (tasks.find((task) => task.id === editingTaskId) ?? null)
+    : null;
+
+  const editingDraft = editingTask
+    ? (drafts[editingTask.id] ?? createDraft(editingTask))
+    : null;
+
+  const editingAssigneeOptions =
+    editingTask && editingTask.assignee && !editingTask.assignee.isActive
+      ? [...activeStaff, editingTask.assignee]
+      : activeStaff;
 
   function refresh() {
     router.refresh();
   }
 
-  function handleAddTask(e: React.FormEvent) {
-    e.preventDefault();
-    if (!newTitle.trim()) return;
-    const optimisticTask: TaskView = {
-      id: `optimistic-${Date.now()}`,
-      title: newTitle.trim(),
-      status: "QUEUED",
-      notes: null,
-      sortOrder: tasks.length,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    };
-    setTasks((prev) => [...prev, optimisticTask]);
-    const title = newTitle.trim();
-    setNewTitle("");
+  function updateDraft(
+    taskId: string,
+    field: keyof TaskDraft[string],
+    value: string,
+  ) {
+    setDrafts((current) => ({
+      ...current,
+      [taskId]: {
+        title: current[taskId]?.title ?? "",
+        description: current[taskId]?.description ?? "",
+        notes: current[taskId]?.notes ?? "",
+        assigneeId: current[taskId]?.assigneeId ?? "",
+        priority: current[taskId]?.priority ?? "MEDIUM",
+        publicStepNumber: current[taskId]?.publicStepNumber ?? "",
+        dueDate: current[taskId]?.dueDate ?? "",
+        [field]: value,
+      },
+    }));
+  }
+
+  function handleAddTask(event: React.FormEvent) {
+    event.preventDefault();
+    if (!newTitle.trim()) {
+      return;
+    }
+
     setError(null);
     startTransition(async () => {
-      const result = await actionCreateCheckTask(trackingNumber, checkId, title);
+      const result = await actionCreateCheckTask(trackingNumber, checkId, {
+        title: newTitle,
+        priority: newPriority,
+        assigneeId: newAssigneeId || null,
+        publicStepNumber: newPublicStepNumber || null,
+        dueDate: newDueDate || null,
+      });
+
       if (result?.error) {
         setError(result.error);
-        setTasks((prev) => prev.filter((t) => t.id !== optimisticTask.id));
-      } else {
-        refresh();
+        return;
       }
-    });
-  }
 
-  function handleStatusChange(taskId: string, status: CheckProgressStatus) {
-    setTasks((prev) =>
-      prev.map((t) => (t.id === taskId ? { ...t, status } : t)),
-    );
-    startTransition(async () => {
-      const result = await actionUpdateCheckTask(trackingNumber, checkId, taskId, { status });
-      if (result?.error) setError(result.error);
-      else refresh();
-    });
-  }
-
-  function handleNotesSave(taskId: string) {
-    const notes = editingNotes[taskId] ?? "";
-    startTransition(async () => {
-      const result = await actionUpdateCheckTask(trackingNumber, checkId, taskId, { notes });
-      if (result?.error) setError(result.error);
-      else refresh();
+      setNewTitle("");
+      setNewPriority("MEDIUM");
+      setNewAssigneeId("");
+      setNewPublicStepNumber("");
+      setNewDueDate("");
+      inputRef.current?.focus();
+      refresh();
     });
   }
 
   function handleDelete(taskId: string) {
-    setTasks((prev) => prev.filter((t) => t.id !== taskId));
+    setError(null);
     startTransition(async () => {
-      const result = await actionDeleteCheckTask(trackingNumber, checkId, taskId);
+      const result = await actionDeleteCheckTask(
+        trackingNumber,
+        checkId,
+        taskId,
+      );
       if (result?.error) {
         setError(result.error);
-        refresh();
+        return;
       }
+
+      setEditingTaskId((current) => (current === taskId ? null : current));
+      refresh();
     });
   }
 
-  function moveTask(index: number, direction: -1 | 1) {
-    const next = [...tasks];
-    const target = index + direction;
-    if (target < 0 || target >= next.length) return;
-    [next[index], next[target]] = [next[target], next[index]];
-    setTasks(next);
+  function handleSave(taskId: string) {
+    const draft = drafts[taskId];
+    if (!draft) {
+      return;
+    }
+
+    setError(null);
     startTransition(async () => {
-      const result = await actionReorderCheckTasks(
+      const result = await actionUpdateCheckTask(
         trackingNumber,
         checkId,
-        next.map((t) => t.id),
+        taskId,
+        {
+          title: draft.title,
+          description: draft.description,
+          notes: draft.notes,
+          assigneeId: draft.assigneeId || null,
+          priority: draft.priority,
+          publicStepNumber: draft.publicStepNumber || null,
+          dueDate: draft.dueDate || null,
+        },
       );
-      if (result?.error) setError(result.error);
+
+      if (result?.error) {
+        setError(result.error);
+        return;
+      }
+
+      setEditingTaskId(null);
+      refresh();
+    });
+  }
+
+  function handleDragStart(
+    event: React.DragEvent<HTMLElement>,
+    taskId: string,
+  ) {
+    event.dataTransfer.effectAllowed = "move";
+    setDragState({
+      taskId,
+      overStatus: null,
+      beforeTaskId: null,
+    });
+  }
+
+  function handleDragEnd() {
+    setDragState(null);
+  }
+
+  function handleDragOver(
+    event: React.DragEvent<HTMLElement>,
+    overStatus: CheckProgressStatus,
+    beforeTaskId: string | null,
+  ) {
+    event.preventDefault();
+
+    if (!dragState || isPending) {
+      return;
+    }
+
+    if (
+      dragState.overStatus === overStatus &&
+      dragState.beforeTaskId === beforeTaskId
+    ) {
+      return;
+    }
+
+    setDragState((current) =>
+      current
+        ? {
+            ...current,
+            overStatus,
+            beforeTaskId,
+          }
+        : current,
+    );
+  }
+
+  function handleDrop(
+    event: React.DragEvent<HTMLElement>,
+    nextStatus: CheckProgressStatus,
+    beforeTaskId: string | null,
+  ) {
+    event.preventDefault();
+    event.stopPropagation();
+
+    if (!dragState || isPending) {
+      return;
+    }
+
+    const sourceTask = tasks.find((task) => task.id === dragState.taskId);
+    if (!sourceTask) {
+      setDragState(null);
+      return;
+    }
+
+    if (sourceTask.id === beforeTaskId) {
+      setDragState(null);
+      return;
+    }
+
+    const nextTasks = moveTaskToPosition(
+      tasks,
+      sourceTask.id,
+      nextStatus,
+      beforeTaskId,
+    );
+
+    const statusChanged = sourceTask.status !== nextStatus;
+    setTasks(nextTasks);
+    setDragState(null);
+    setError(null);
+
+    startTransition(async () => {
+      if (statusChanged) {
+        const statusResult = await actionUpdateCheckTask(
+          trackingNumber,
+          checkId,
+          sourceTask.id,
+          { status: nextStatus },
+        );
+
+        if (statusResult?.error) {
+          setError(statusResult.error);
+          refresh();
+          return;
+        }
+      }
+
+      const reorderResult = await actionReorderCheckTasks(
+        trackingNumber,
+        checkId,
+        nextTasks.map((task) => task.id),
+      );
+
+      if (reorderResult?.error) {
+        setError(reorderResult.error);
+        refresh();
+        return;
+      }
+
+      refresh();
     });
   }
 
   return (
-    <div className="space-y-4">
+    <div className={fullScreen ? "space-y-5" : "space-y-6"}>
+      <section
+        className={[
+          "border border-outline-variant/20 bg-white",
+          fullScreen ? "p-4 md:p-5" : "p-5",
+        ].join(" ")}
+      >
+        <div className="flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
+          <div>
+            <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-outline">
+              Board Intake
+            </p>
+            <h3 className="mt-2 font-headline text-lg font-bold text-on-surface md:text-xl">
+              Add a Task
+            </h3>
+            <p className="mt-1 text-sm leading-6 text-on-surface-variant">
+              New tasks start in Backlog and can be dragged across the board.
+            </p>
+          </div>
+          <div className="text-[11px] uppercase tracking-[0.18em] text-outline">
+            {tasks.length} tasks in this check
+          </div>
+        </div>
+
+        <form
+          onSubmit={handleAddTask}
+          className={[
+            "mt-5 grid gap-3 border border-outline-variant/20 bg-surface-container-low p-4",
+            fullScreen
+              ? "md:grid-cols-2 xl:grid-cols-[minmax(0,1.7fr)_0.85fr_0.8fr_1fr_0.95fr_auto]"
+              : "lg:grid-cols-[1.45fr_0.8fr_0.8fr_1fr_0.9fr_auto]",
+          ].join(" ")}
+        >
+          <input
+            ref={inputRef}
+            type="text"
+            value={newTitle}
+            onChange={(event) => setNewTitle(event.target.value)}
+            placeholder="Review employer contact details"
+            className="min-w-0 border border-outline-variant bg-white px-4 py-3 text-sm text-on-surface placeholder:text-outline focus:border-primary focus:outline-none disabled:cursor-not-allowed"
+            disabled={isPending}
+          />
+          <select
+            value={newPriority}
+            onChange={(event) =>
+              setNewPriority(event.target.value as TaskPriority)
+            }
+            className="border border-outline-variant bg-white px-4 py-3 text-sm text-on-surface focus:border-primary focus:outline-none disabled:cursor-not-allowed"
+            disabled={isPending}
+          >
+            {PRIORITY_OPTIONS.map((priority) => (
+              <option key={priority} value={priority}>
+                {priority}
+              </option>
+            ))}
+          </select>
+          <input
+            type="number"
+            min="1"
+            step="1"
+            value={newPublicStepNumber}
+            onChange={(event) => setNewPublicStepNumber(event.target.value)}
+            placeholder="Step #"
+            className="border border-outline-variant bg-white px-4 py-3 text-sm text-on-surface placeholder:text-outline focus:border-primary focus:outline-none disabled:cursor-not-allowed"
+            disabled={isPending}
+          />
+          <select
+            value={newAssigneeId}
+            onChange={(event) => setNewAssigneeId(event.target.value)}
+            className="border border-outline-variant bg-white px-4 py-3 text-sm text-on-surface focus:border-primary focus:outline-none disabled:cursor-not-allowed"
+            disabled={isPending}
+          >
+            <option value="">Unassigned</option>
+            {activeStaff.map((member) => (
+              <option key={member.id} value={member.id}>
+                {member.name}
+              </option>
+            ))}
+          </select>
+          <input
+            type="date"
+            value={newDueDate}
+            onChange={(event) => setNewDueDate(event.target.value)}
+            className="border border-outline-variant bg-white px-4 py-3 text-sm text-on-surface focus:border-primary focus:outline-none disabled:cursor-not-allowed"
+            disabled={isPending}
+          />
+          <button
+            type="submit"
+            disabled={isPending || !newTitle.trim()}
+            className="inline-flex items-center justify-center border border-[#f0ca52] bg-primary px-5 py-3 text-[11px] font-bold uppercase tracking-[0.18em] text-on-primary transition hover:bg-primary-container hover:text-on-primary-container disabled:opacity-40"
+          >
+            Create Task
+          </button>
+        </form>
+      </section>
+
       {error ? (
-        <p className="rounded-xl bg-red-50 px-4 py-2 text-xs text-red-600">{error}</p>
+        <p className="border border-error/30 bg-error-container px-4 py-3 text-sm text-error">
+          {error}
+        </p>
       ) : null}
 
-      {tasks.length === 0 ? (
-        <p className="text-sm text-outline/60 italic">
-          No tasks yet. Add your first task below.
-        </p>
-      ) : (
-        <div className="space-y-2">
-          {tasks.map((task, index) => {
-            const isExpanded = expandedId === task.id;
-            const currentNote = editingNotes[task.id] ?? task.notes ?? "";
-
-            return (
-              <div
-                key={task.id}
-                className="rounded-2xl border border-amber-100 bg-[#fffaf0] transition"
-              >
-                <div className="flex items-center gap-2 px-4 py-3">
-                  <div className="flex flex-col gap-0.5">
-                    <button
-                      onClick={() => moveTask(index, -1)}
-                      disabled={isPending || index === 0}
-                      className="flex h-5 w-5 items-center justify-center rounded-full text-[10px] text-outline hover:bg-amber-100 disabled:opacity-20"
-                    >
-                      ▲
-                    </button>
-                    <button
-                      onClick={() => moveTask(index, 1)}
-                      disabled={isPending || index === tasks.length - 1}
-                      className="flex h-5 w-5 items-center justify-center rounded-full text-[10px] text-outline hover:bg-amber-100 disabled:opacity-20"
-                    >
-                      ▼
-                    </button>
-                  </div>
-
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-semibold text-on-surface">
-                      {task.title}
+      <section
+        className={[
+          "border border-outline-variant/20 bg-surface-container-low/50",
+          fullScreen ? "p-3 md:p-4" : "p-4",
+        ].join(" ")}
+      >
+        <div className="flex snap-x snap-mandatory gap-3 overflow-x-auto pb-2 md:gap-4">
+          {tasksByStatus.map((column) => (
+            <div
+              key={column.value}
+              onDragOver={(event) => handleDragOver(event, column.value, null)}
+              onDrop={(event) => handleDrop(event, column.value, null)}
+              className={`flex min-h-[calc(100vh-24rem)] w-[88vw] shrink-0 snap-start flex-col border p-3 sm:w-[22rem] xl:w-[19rem] ${column.tone}`}
+            >
+              <div className="mb-3 flex items-center justify-between gap-3 bg-white px-4 py-3">
+                <div className="flex items-center gap-3">
+                  <span
+                    className={`h-2.5 w-2.5 rounded-full ${column.accent}`}
+                  />
+                  <div>
+                    <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-outline">
+                      {column.label}
                     </p>
-                    {task.notes && !isExpanded ? (
-                      <p className="mt-0.5 truncate text-xs text-outline">{task.notes}</p>
-                    ) : null}
+                    <p className="text-[11px] text-on-surface-variant">
+                      Drag cards here
+                    </p>
                   </div>
+                </div>
+                <span className="border border-outline-variant/30 bg-surface-container-low px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.18em] text-outline">
+                  {column.tasks.length}
+                </span>
+              </div>
 
-                  <div className="flex shrink-0 items-center gap-2">
-                    <select
-                      value={task.status}
-                      disabled={isPending}
-                      onChange={(e) =>
-                        handleStatusChange(task.id, e.target.value as CheckProgressStatus)
-                      }
-                      className={[
-                        "rounded-full border px-2.5 py-1 text-[11px] font-bold uppercase tracking-wider focus:outline-none",
-                        statusStyle(task.status),
-                      ].join(" ")}
+              <div className="flex flex-1 flex-col gap-3">
+                {column.tasks.length === 0 ? (
+                  <div className="flex flex-1 items-center justify-center border border-dashed border-outline-variant/30 bg-white/70 px-4 py-6 text-center text-sm text-outline">
+                    Drop a task here
+                  </div>
+                ) : (
+                  column.tasks.map((task) => {
+                    const isDragging = dragState?.taskId === task.id;
+
+                    return (
+                      <article
+                        key={task.id}
+                        draggable={!isPending}
+                        onDragStart={(event) => handleDragStart(event, task.id)}
+                        onDragEnd={handleDragEnd}
+                        onDragOver={(event) =>
+                          handleDragOver(event, column.value, task.id)
+                        }
+                        onDrop={(event) =>
+                          handleDrop(event, column.value, task.id)
+                        }
+                        className={[
+                          "cursor-grab border border-outline-variant/20 bg-white p-4 transition",
+                          "hover:-translate-y-0.5 hover:shadow-[0_18px_40px_rgba(15,23,42,0.12)]",
+                          "touch-pan-x",
+                          isDragging ? "opacity-45" : "opacity-100",
+                        ].join(" ")}
+                      >
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="flex items-start gap-2">
+                            <span className="mt-0.5 text-outline">
+                              <GripVertical className="h-4 w-4" />
+                            </span>
+                            <div>
+                              <h4 className="text-sm font-semibold leading-5 text-on-surface">
+                                {task.title}
+                              </h4>
+                              {task.description ? (
+                                <p className="mt-1 line-clamp-2 text-[11px] leading-5 text-on-surface-variant">
+                                  {task.description}
+                                </p>
+                              ) : null}
+                            </div>
+                          </div>
+
+                          <span
+                            className={`border px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.18em] ${priorityTone(task.priority)}`}
+                          >
+                            {task.priority}
+                          </span>
+                        </div>
+
+                        <div className="mt-4 space-y-2 text-[11px] text-on-surface-variant">
+                          <div className="flex items-center gap-2">
+                            <span className="border border-slate-200 bg-slate-50 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.18em] text-slate-700">
+                              {formatBoardPosition(task.sortOrder)}
+                            </span>
+                            {task.publicStepNumber !== null ? (
+                              <span className="border border-outline-variant/30 bg-surface-container-low px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.18em] text-on-surface">
+                                Step #{task.publicStepNumber}
+                              </span>
+                            ) : null}
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <UserRound className="h-3.5 w-3.5 text-outline" />
+                            <span>{task.assignee?.name ?? "Unassigned"}</span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <CalendarDays className="h-3.5 w-3.5 text-outline" />
+                            <span>{formatDateLabel(task.dueDate)}</span>
+                          </div>
+                          {task.notes ? (
+                            <p className="bg-surface-container-low px-3 py-2 text-[11px] leading-5 text-outline">
+                              {task.notes}
+                            </p>
+                          ) : null}
+                        </div>
+
+                        <div className="mt-4 flex items-center justify-between gap-2 border-t border-slate-100 pt-3">
+                          <span className="text-[10px] font-bold uppercase tracking-[0.16em] text-outline">
+                            Drag to change status
+                          </span>
+                          <div className="flex items-center gap-2">
+                            <button
+                              type="button"
+                              onClick={() => setEditingTaskId(task.id)}
+                              className="inline-flex h-8 w-8 items-center justify-center border border-outline-variant/30 bg-white text-outline transition hover:border-primary hover:text-on-surface"
+                            >
+                              <Pencil className="h-3.5 w-3.5" />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleDelete(task.id)}
+                              disabled={isPending}
+                              className="inline-flex h-8 w-8 items-center justify-center border border-red-100 bg-white text-red-400 transition hover:border-red-300 hover:text-red-600 disabled:opacity-40"
+                            >
+                              <Trash2 className="h-3.5 w-3.5" />
+                            </button>
+                          </div>
+                        </div>
+                      </article>
+                    );
+                  })
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <Dialog
+        open={editingTaskId !== null}
+        onOpenChange={(nextOpen) => {
+          if (!nextOpen && !isPending) {
+            setEditingTaskId(null);
+          }
+        }}
+      >
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle className="font-headline text-xl text-on-surface md:text-2xl">
+              Edit Task
+            </DialogTitle>
+            <DialogDescription>
+              Update the task details here. Move the card on the board to change
+              its status.
+            </DialogDescription>
+          </DialogHeader>
+
+          {editingTask && editingDraft ? (
+            <div className="space-y-4">
+              <div className="border border-outline-variant/20 bg-surface-container-low px-4 py-3 text-xs font-bold uppercase tracking-[0.18em] text-outline">
+                Current status:{" "}
+                {STATUS_COLUMNS.find(
+                  (column) => column.value === editingTask.status,
+                )?.label ?? editingTask.status}
+              </div>
+
+              <fieldset
+                disabled={isPending}
+                className="grid gap-4 disabled:opacity-100"
+              >
+                <div>
+                  <label
+                    htmlFor="task-title"
+                    className="mb-2 block text-[11px] font-bold uppercase tracking-[0.18em] text-outline"
+                  >
+                    Title
+                  </label>
+                  <input
+                    id="task-title"
+                    type="text"
+                    value={editingDraft.title}
+                    onChange={(event) =>
+                      updateDraft(editingTask.id, "title", event.target.value)
+                    }
+                    className="w-full border border-outline-variant bg-white px-4 py-3 text-sm text-on-surface outline-none transition-colors focus:border-primary disabled:cursor-not-allowed disabled:bg-surface-container-low"
+                  />
+                </div>
+
+                <div>
+                  <label
+                    htmlFor="task-description"
+                    className="mb-2 block text-[11px] font-bold uppercase tracking-[0.18em] text-outline"
+                  >
+                    Description
+                  </label>
+                  <textarea
+                    id="task-description"
+                    rows={4}
+                    value={editingDraft.description}
+                    onChange={(event) =>
+                      updateDraft(
+                        editingTask.id,
+                        "description",
+                        event.target.value,
+                      )
+                    }
+                    className="w-full border border-outline-variant bg-white px-4 py-3 text-sm text-on-surface outline-none transition-colors focus:border-primary disabled:cursor-not-allowed disabled:bg-surface-container-low"
+                  />
+                </div>
+
+                <div>
+                  <label
+                    htmlFor="task-notes"
+                    className="mb-2 block text-[11px] font-bold uppercase tracking-[0.18em] text-outline"
+                  >
+                    Notes
+                  </label>
+                  <textarea
+                    id="task-notes"
+                    rows={4}
+                    value={editingDraft.notes}
+                    onChange={(event) =>
+                      updateDraft(editingTask.id, "notes", event.target.value)
+                    }
+                    className="w-full border border-outline-variant bg-white px-4 py-3 text-sm text-on-surface outline-none transition-colors focus:border-primary disabled:cursor-not-allowed disabled:bg-surface-container-low"
+                  />
+                </div>
+
+                <div className="grid gap-4 md:grid-cols-3">
+                  <div>
+                    <label
+                      htmlFor="task-assignee"
+                      className="mb-2 block text-[11px] font-bold uppercase tracking-[0.18em] text-outline"
                     >
-                      {STATUS_OPTIONS.map((opt) => (
-                        <option key={opt.value} value={opt.value}>
-                          {opt.label}
+                      Assignee
+                    </label>
+                    <select
+                      id="task-assignee"
+                      value={editingDraft.assigneeId}
+                      onChange={(event) =>
+                        updateDraft(
+                          editingTask.id,
+                          "assigneeId",
+                          event.target.value,
+                        )
+                      }
+                      className="w-full border border-outline-variant bg-white px-4 py-3 text-sm text-on-surface outline-none transition-colors focus:border-primary disabled:cursor-not-allowed disabled:bg-surface-container-low"
+                    >
+                      <option value="">Unassigned</option>
+                      {editingAssigneeOptions.map((member) => (
+                        <option key={member.id} value={member.id}>
+                          {member.name}
+                          {!member.isActive ? " (Inactive)" : ""}
                         </option>
                       ))}
                     </select>
+                  </div>
 
-                    <button
-                      onClick={() => {
-                        if (!isExpanded) {
-                          setEditingNotes((prev) => ({
-                            ...prev,
-                            [task.id]: task.notes ?? "",
-                          }));
-                        }
-                        setExpandedId(isExpanded ? null : task.id);
-                      }}
-                      title={isExpanded ? "Collapse" : "Add note"}
-                      className="flex h-7 w-7 items-center justify-center rounded-full border border-amber-200 bg-white text-outline transition hover:border-primary hover:text-on-surface"
+                  <div>
+                    <label
+                      htmlFor="task-public-step"
+                      className="mb-2 block text-[11px] font-bold uppercase tracking-[0.18em] text-outline"
                     >
-                      {isExpanded ? "−" : "+"}
-                    </button>
+                      Step #
+                    </label>
+                    <input
+                      id="task-public-step"
+                      type="number"
+                      min="1"
+                      step="1"
+                      value={editingDraft.publicStepNumber}
+                      onChange={(event) =>
+                        updateDraft(
+                          editingTask.id,
+                          "publicStepNumber",
+                          event.target.value,
+                        )
+                      }
+                      placeholder="Optional"
+                      className="w-full border border-outline-variant bg-white px-4 py-3 text-sm text-on-surface outline-none transition-colors focus:border-primary disabled:cursor-not-allowed disabled:bg-surface-container-low"
+                    />
+                  </div>
 
-                    <button
-                      onClick={() => handleDelete(task.id)}
-                      disabled={isPending}
-                      title="Delete task"
-                      className="flex h-7 w-7 items-center justify-center rounded-full border border-red-100 bg-white text-red-300 transition hover:border-red-400 hover:text-red-600 disabled:opacity-30"
+                  <div>
+                    <label
+                      htmlFor="task-priority"
+                      className="mb-2 block text-[11px] font-bold uppercase tracking-[0.18em] text-outline"
                     >
-                      ×
-                    </button>
+                      Priority
+                    </label>
+                    <select
+                      id="task-priority"
+                      value={editingDraft.priority}
+                      onChange={(event) =>
+                        updateDraft(
+                          editingTask.id,
+                          "priority",
+                          event.target.value,
+                        )
+                      }
+                      className="w-full border border-outline-variant bg-white px-4 py-3 text-sm text-on-surface outline-none transition-colors focus:border-primary disabled:cursor-not-allowed disabled:bg-surface-container-low"
+                    >
+                      {PRIORITY_OPTIONS.map((priority) => (
+                        <option key={priority} value={priority}>
+                          {priority}
+                        </option>
+                      ))}
+                    </select>
                   </div>
                 </div>
 
-                {isExpanded ? (
-                  <div className="border-t border-amber-100 px-4 pb-4 pt-3">
-                    <label className="block text-[10px] font-bold uppercase tracking-[0.18em] text-outline">
-                      Note
-                    </label>
-                    <textarea
-                      rows={3}
-                      value={currentNote}
-                      onChange={(e) =>
-                        setEditingNotes((prev) => ({
-                          ...prev,
-                          [task.id]: e.target.value,
-                        }))
-                      }
-                      placeholder="Add a note for this task…"
-                      className="mt-2 w-full resize-none rounded-xl border border-amber-200 bg-white px-3 py-2 text-sm text-on-surface placeholder:text-outline focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
-                    />
-                    <button
-                      onClick={() => {
-                        handleNotesSave(task.id);
-                        setExpandedId(null);
-                      }}
-                      disabled={isPending}
-                      className="mt-2 inline-flex items-center rounded-full border border-primary bg-primary px-4 py-1.5 text-[11px] font-bold uppercase tracking-wider text-[color:var(--color-on-primary)] transition hover:bg-primary-container disabled:opacity-50"
+                <div className="grid gap-4 md:grid-cols-3">
+                  <div>
+                    <label
+                      htmlFor="task-due-date"
+                      className="mb-2 block text-[11px] font-bold uppercase tracking-[0.18em] text-outline"
                     >
-                      Save Note
-                    </button>
+                      Due Date
+                    </label>
+                    <input
+                      id="task-due-date"
+                      type="date"
+                      value={editingDraft.dueDate}
+                      onChange={(event) =>
+                        updateDraft(
+                          editingTask.id,
+                          "dueDate",
+                          event.target.value,
+                        )
+                      }
+                      className="w-full border border-outline-variant bg-white px-4 py-3 text-sm text-on-surface outline-none transition-colors focus:border-primary disabled:cursor-not-allowed disabled:bg-surface-container-low"
+                    />
                   </div>
-                ) : null}
-              </div>
-            );
-          })}
-        </div>
-      )}
+                </div>
+              </fieldset>
+            </div>
+          ) : null}
 
-      <form onSubmit={handleAddTask} className="flex gap-2 pt-1">
-        <input
-          ref={inputRef}
-          type="text"
-          value={newTitle}
-          onChange={(e) => setNewTitle(e.target.value)}
-          placeholder="New task title…"
-          className="min-w-0 flex-1 rounded-2xl border border-amber-200 bg-white px-4 py-2.5 text-sm text-on-surface placeholder:text-outline focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
-        />
-        <button
-          type="submit"
-          disabled={isPending || !newTitle.trim()}
-          className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-[#f0ca52] bg-primary px-5 py-2.5 text-xs font-bold uppercase tracking-[0.18em] text-[color:var(--color-on-primary)] transition hover:bg-primary-container disabled:opacity-40"
-        >
-          + Add Task
-        </button>
-      </form>
+          <DialogFooter>
+            <button
+              type="button"
+              onClick={() => setEditingTaskId(null)}
+              disabled={isPending}
+              className="border border-outline-variant/30 bg-white px-5 py-2.5 text-xs font-bold uppercase tracking-[0.18em] text-on-surface transition hover:border-primary disabled:opacity-40"
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              onClick={() => editingTask && handleSave(editingTask.id)}
+              disabled={isPending || !editingDraft?.title.trim()}
+              className="border border-[#f0ca52] bg-primary px-5 py-2.5 text-xs font-bold uppercase tracking-[0.18em] text-on-primary transition hover:bg-primary-container hover:text-on-primary-container disabled:opacity-40"
+            >
+              {isPending ? "Saving..." : "Save Task"}
+            </button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

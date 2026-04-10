@@ -4,34 +4,34 @@ import { useTransition, useState } from "react";
 import { useRouter } from "next/navigation";
 import Badge from "@/components/ui/badge";
 import {
-  actionUpdateServiceCheck,
   actionReorderServiceChecks,
+  actionUpdateServiceCheck,
 } from "@/app/actions/service-checks";
 import type { CheckProgressStatus } from "@/lib/tracking/types";
 
-const STATUS_OPTIONS: { value: CheckProgressStatus; label: string; description: string }[] = [
-  { value: "QUEUED", label: "Queued", description: "Not yet started" },
-  { value: "IN_PROGRESS", label: "Ongoing", description: "Actively being processed" },
-  { value: "ACTIVE_INVESTIGATION", label: "Investigating", description: "Under active investigation" },
-  { value: "COMPLETED", label: "Done", description: "Fully completed" },
-  { value: "ON_HOLD", label: "On Hold", description: "Paused, awaiting action" },
-];
-
-function statusToBadge(status: string): React.ComponentProps<typeof Badge>["status"] {
+function statusToBadge(
+  status: string,
+): React.ComponentProps<typeof Badge>["status"] {
   switch (status) {
-    case "COMPLETED": return "completed";
-    case "IN_PROGRESS": return "in-progress";
-    case "ACTIVE_INVESTIGATION": return "active-investigation";
-    case "ON_HOLD": return "pending";
-    default: return "queued";
+    case "COMPLETED":
+      return "completed";
+    case "IN_PROGRESS":
+      return "in-progress";
+    case "ACTIVE_INVESTIGATION":
+      return "active-investigation";
+    case "ON_HOLD":
+      return "pending";
+    default:
+      return "queued";
   }
 }
 
 interface ServiceCheckEditorProps {
   checkId: string;
-  checkName: string;
+  serviceLabel: string;
   initialStatus: CheckProgressStatus;
   initialNotes: string | null;
+  initialTimelineLabel: string | null;
   trackingNumber: string;
   allCheckIds: string[];
   currentIndex: number;
@@ -39,32 +39,30 @@ interface ServiceCheckEditorProps {
 
 export default function ServiceCheckEditor({
   checkId,
-  checkName,
+  serviceLabel,
   initialStatus,
   initialNotes,
+  initialTimelineLabel,
   trackingNumber,
   allCheckIds,
   currentIndex,
 }: ServiceCheckEditorProps) {
   const router = useRouter();
-  const [status, setStatus] = useState<CheckProgressStatus>(initialStatus);
   const [notes, setNotes] = useState(initialNotes ?? "");
+  const [timelineLabel, setTimelineLabel] = useState(
+    initialTimelineLabel ?? "",
+  );
   const [saved, setSaved] = useState(false);
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
-
-  function handleStatusChange(next: CheckProgressStatus) {
-    setStatus(next);
-    setSaved(false);
-  }
 
   function handleSave() {
     setError(null);
     setSaved(false);
     startTransition(async () => {
       const result = await actionUpdateServiceCheck(trackingNumber, checkId, {
-        status,
         notes,
+        timelineLabel,
       });
       if (result?.error) {
         setError(result.error);
@@ -88,8 +86,11 @@ export default function ServiceCheckEditor({
 
   return (
     <div className="space-y-8">
-      <div className="flex items-center gap-3">
-        <Badge status={statusToBadge(status)} />
+      <div className="flex flex-wrap items-center gap-3">
+        <Badge status={statusToBadge(initialStatus)} />
+        <span className="text-xs uppercase tracking-[0.18em] text-outline">
+          Rolled up from tasks
+        </span>
         {saved ? (
           <span className="text-xs font-semibold text-green-600">Saved ✓</span>
         ) : null}
@@ -98,37 +99,36 @@ export default function ServiceCheckEditor({
         ) : null}
       </div>
 
-      <div>
-        <h2 className="text-[11px] font-bold uppercase tracking-[0.2em] text-outline">
-          Status
-        </h2>
-        <div className="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
-          {STATUS_OPTIONS.map((opt) => (
-            <button
-              key={opt.value}
-              onClick={() => handleStatusChange(opt.value)}
-              disabled={isPending}
-              className={[
-                "flex flex-col items-start gap-0.5 rounded-2xl border px-4 py-3 text-left transition",
-                status === opt.value
-                  ? "border-primary bg-primary text-[color:var(--color-on-primary)]"
-                  : "border-amber-100 bg-[#fffaf0] text-on-surface hover:border-primary hover:bg-white",
-              ].join(" ")}
-            >
-              <span className="text-sm font-bold">{opt.label}</span>
-              <span
-                className={[
-                  "text-[11px]",
-                  status === opt.value
-                    ? "text-[color:var(--color-on-primary)]/70"
-                    : "text-outline",
-                ].join(" ")}
-              >
-                {opt.description}
-              </span>
-            </button>
-          ))}
+      <div className="border border-outline-variant/20 bg-surface-container-low p-4">
+        <div className="text-[11px] font-bold uppercase tracking-[0.2em] text-outline">
+          Service
         </div>
+        <p className="mt-2 text-base font-semibold text-on-surface">
+          {serviceLabel}
+        </p>
+        <p className="mt-1 text-sm text-on-surface-variant">
+          This status is now driven by the tasks under this service check.
+        </p>
+      </div>
+
+      <div>
+        <label
+          htmlFor="timelineLabel"
+          className="block text-[11px] font-bold uppercase tracking-[0.2em] text-outline"
+        >
+          Timeline Label
+        </label>
+        <input
+          id="timelineLabel"
+          type="text"
+          value={timelineLabel}
+          onChange={(event) => {
+            setTimelineLabel(event.target.value);
+            setSaved(false);
+          }}
+          placeholder="Example: Waiting on employer callback"
+          className="mt-3 w-full border border-outline-variant bg-white px-4 py-3 text-sm text-on-surface placeholder:text-outline focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
+        />
       </div>
 
       <div>
@@ -136,18 +136,18 @@ export default function ServiceCheckEditor({
           htmlFor="notes"
           className="block text-[11px] font-bold uppercase tracking-[0.2em] text-outline"
         >
-          Remark / Notes
+          Service Notes
         </label>
         <textarea
           id="notes"
           rows={6}
           value={notes}
-          onChange={(e) => {
-            setNotes(e.target.value);
+          onChange={(event) => {
+            setNotes(event.target.value);
             setSaved(false);
           }}
-          placeholder="Add your remarks, progress notes, or any relevant details for this check…"
-          className="mt-3 w-full resize-y rounded-2xl border border-amber-200 bg-white px-4 py-3 text-sm text-on-surface placeholder:text-outline focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
+          placeholder="Add context, blockers, or summary notes for this service…"
+          className="mt-3 w-full resize-y border border-outline-variant bg-white px-4 py-3 text-sm text-on-surface placeholder:text-outline focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
         />
       </div>
 
@@ -155,9 +155,9 @@ export default function ServiceCheckEditor({
         <button
           onClick={handleSave}
           disabled={isPending}
-          className="inline-flex items-center gap-2 rounded-full border border-[#f0ca52] bg-primary px-6 py-2.5 text-sm font-bold uppercase tracking-[0.18em] text-[color:var(--color-on-primary)] transition hover:bg-primary-container disabled:opacity-50"
+          className="inline-flex items-center gap-2 border border-[#f0ca52] bg-primary px-6 py-2.5 text-sm font-bold uppercase tracking-[0.18em] text-on-primary transition hover:bg-primary-container hover:text-on-primary-container disabled:opacity-50"
         >
-          {isPending ? "Saving…" : "Save Changes"}
+          {isPending ? "Saving…" : "Save Service Notes"}
         </button>
 
         <div className="flex items-center gap-2">
@@ -165,7 +165,7 @@ export default function ServiceCheckEditor({
             onClick={() => handleMove(-1)}
             disabled={isPending || currentIndex === 0}
             title="Move up in order"
-            className="flex h-9 w-9 items-center justify-center rounded-full border border-amber-200 bg-white text-outline transition hover:border-primary hover:text-on-surface disabled:opacity-30"
+            className="flex h-9 w-9 items-center justify-center border border-outline-variant/30 bg-white text-outline transition hover:border-primary hover:text-on-surface disabled:opacity-30"
           >
             ▲
           </button>
@@ -173,11 +173,11 @@ export default function ServiceCheckEditor({
             onClick={() => handleMove(1)}
             disabled={isPending || currentIndex === allCheckIds.length - 1}
             title="Move down in order"
-            className="flex h-9 w-9 items-center justify-center rounded-full border border-amber-200 bg-white text-outline transition hover:border-primary hover:text-on-surface disabled:opacity-30"
+            className="flex h-9 w-9 items-center justify-center border border-outline-variant/30 bg-white text-outline transition hover:border-primary hover:text-on-surface disabled:opacity-30"
           >
             ▼
           </button>
-          <span className="text-xs text-outline">Reorder</span>
+          <span className="text-xs text-outline">Reorder service</span>
         </div>
       </div>
     </div>

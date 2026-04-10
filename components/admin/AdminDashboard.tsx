@@ -124,9 +124,9 @@ export default function AdminDashboard({ rows }: AdminDashboardProps) {
   return (
     <div className="space-y-8">
       <div className="grid gap-4 lg:grid-cols-[1.4fr_0.6fr]">
-        <div className="rounded-[2rem] border border-amber-200 bg-white p-6 shadow-[0_18px_60px_rgba(66,44,0,0.06)]">
+        <div className="border border-outline-variant/20 bg-white p-6">
           <div className="flex items-start gap-4">
-            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-primary-fixed text-primary">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center bg-primary-fixed text-primary">
               <BriefcaseBusiness className="h-6 w-6" />
             </div>
             <div>
@@ -145,7 +145,7 @@ export default function AdminDashboard({ rows }: AdminDashboardProps) {
           </div>
         </div>
 
-        <div className="rounded-[2rem] border border-amber-200 bg-white p-6 shadow-[0_18px_60px_rgba(66,44,0,0.06)]">
+        <div className="border border-outline-variant/20 bg-white p-6">
           <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-outline">
             Queue Snapshot
           </p>
@@ -173,7 +173,7 @@ export default function AdminDashboard({ rows }: AdminDashboardProps) {
         </div>
       </div>
 
-      <section className="rounded-[2rem] border border-amber-200 bg-white p-6 shadow-[0_18px_60px_rgba(66,44,0,0.06)]">
+      <section className="border border-outline-variant/20 bg-white p-6">
         <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
           <div className="flex-1">
             <div className="mb-3 flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.24em] text-outline">
@@ -185,7 +185,7 @@ export default function AdminDashboard({ rows }: AdminDashboardProps) {
               onChange={(event) => updateSearch(event.target.value)}
               placeholder="Search by tracking number, email, subject, company, or purpose"
               leftIcon={<UserSearch className="h-4 w-4" />}
-              className="h-12 rounded-[1.2rem] border-amber-200"
+              className="h-12 border border-outline-variant/20"
             />
           </div>
 
@@ -197,7 +197,7 @@ export default function AdminDashboard({ rows }: AdminDashboardProps) {
                 onChange={(event) =>
                   updateFilter(event.target.value as FilterMode)
                 }
-                className="appearance-none rounded-full border border-amber-200 bg-white py-2.5 pl-8 pr-7 text-xs font-bold uppercase tracking-[0.18em] text-on-surface outline-none transition-colors focus:border-primary"
+                className="appearance-none border border-outline-variant/30 bg-white py-2.5 pl-8 pr-7 text-xs font-bold uppercase tracking-[0.18em] text-on-surface outline-none transition-colors focus:border-primary"
               >
                 <option value="all">All Cases</option>
                 <option value="with-checks">With Checks</option>
@@ -207,13 +207,13 @@ export default function AdminDashboard({ rows }: AdminDashboardProps) {
               <ChevronDown className="pointer-events-none absolute right-2.5 h-3.5 w-3.5 text-outline" />
             </div>
 
-            <div className="flex items-center gap-0.5 rounded-full border border-amber-200 bg-[#fffaf0] p-1">
+            <div className="flex items-center gap-0.5 border border-outline-variant/20 bg-surface-container-low p-1">
               <button
                 type="button"
                 onClick={() => setViewMode("table")}
                 title="Table view"
                 className={[
-                  "inline-flex items-center justify-center rounded-full p-2 transition-colors",
+                  "inline-flex items-center justify-center p-2 transition-colors",
                   viewMode === "table"
                     ? "bg-primary text-[color:var(--color-on-primary)]"
                     : "text-on-surface-variant hover:text-on-surface",
@@ -226,7 +226,7 @@ export default function AdminDashboard({ rows }: AdminDashboardProps) {
                 onClick={() => setViewMode("card")}
                 title="Card view"
                 className={[
-                  "inline-flex items-center justify-center rounded-full p-2 transition-colors",
+                  "inline-flex items-center justify-center p-2 transition-colors",
                   viewMode === "card"
                     ? "bg-primary text-[color:var(--color-on-primary)]"
                     : "text-on-surface-variant hover:text-on-surface",
@@ -238,7 +238,7 @@ export default function AdminDashboard({ rows }: AdminDashboardProps) {
           </div>
         </div>
 
-        <div className="mt-6 flex flex-wrap items-center justify-between gap-3 rounded-[1.4rem] border border-amber-100 bg-[#fffaf0] px-4 py-3">
+        <div className="mt-6 flex flex-wrap items-center justify-between gap-3 border border-outline-variant/20 bg-surface-container-low px-4 py-3">
           <div className="flex items-center gap-2 text-sm text-on-surface-variant">
             <ListFilter className="h-4 w-4 text-primary" />
             Showing{" "}
@@ -258,9 +258,9 @@ export default function AdminDashboard({ rows }: AdminDashboardProps) {
 
         <div className="mt-6">
           {viewMode === "table" ? (
-            <div className="overflow-x-auto rounded-[1.6rem] border border-amber-100">
-              <table className="min-w-full divide-y divide-amber-100 bg-white">
-                <thead className="bg-[#fffaf0]">
+            <div className="overflow-x-auto border border-outline-variant/20">
+              <table className="min-w-full divide-y divide-outline-variant/20 bg-white">
+                <thead className="bg-surface-container-low">
                   <tr className="text-left text-[11px] font-bold uppercase tracking-[0.2em] text-outline">
                     <th className="px-6 py-4">Tracking Number</th>
                     <th className="px-6 py-4">Subject</th>
@@ -270,7 +270,7 @@ export default function AdminDashboard({ rows }: AdminDashboardProps) {
                     <th className="px-6 py-4">Action</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-amber-50">
+                <tbody className="divide-y divide-outline-variant/10">
                   {paginatedRows.map((row) => (
                     <tr key={row.trackingNumber} className="align-top">
                       <td className="px-6 py-4 text-sm font-semibold text-on-surface">
@@ -300,6 +300,7 @@ export default function AdminDashboard({ rows }: AdminDashboardProps) {
                                   <Badge
                                     status="processing"
                                     label={check.label}
+                                    className="border border-outline-variant/20"
                                   />
                                   <span className="text-[11px] text-on-surface-variant">
                                     {check.value
@@ -320,7 +321,7 @@ export default function AdminDashboard({ rows }: AdminDashboardProps) {
                       <td className="px-6 py-4">
                         <Link
                           href={`/admin/orders/${encodeURIComponent(row.trackingNumber)}`}
-                          className="inline-flex rounded-full border border-[#f0ca52] bg-primary px-4 py-2 text-xs font-bold uppercase tracking-[0.18em] text-[color:var(--color-on-primary)] transition-colors hover:bg-primary-container"
+                          className="inline-flex border border-[#f0ca52] bg-primary px-4 py-2 text-xs font-bold uppercase tracking-[0.18em] text-on-primary transition-colors hover:bg-primary-container hover:text-on-primary-container"
                         >
                           Open Case
                         </Link>
@@ -335,7 +336,7 @@ export default function AdminDashboard({ rows }: AdminDashboardProps) {
               {paginatedRows.map((row) => (
                 <div
                   key={row.trackingNumber}
-                  className="rounded-[1.6rem] border border-amber-100 bg-white p-5 shadow-[0_10px_30px_rgba(66,44,0,0.04)]"
+                  className="border border-outline-variant/20 bg-white p-5"
                 >
                   <div className="flex items-start justify-between gap-3">
                     <div>
@@ -346,7 +347,7 @@ export default function AdminDashboard({ rows }: AdminDashboardProps) {
                         {row.trackingNumber}
                       </h3>
                     </div>
-                    <span className="rounded-full border border-amber-200 bg-[#fffaf0] px-3 py-1 text-[10px] font-bold uppercase tracking-[0.18em] text-outline">
+                    <span className="border border-outline-variant/30 bg-surface-container-low px-3 py-1 text-[10px] font-bold uppercase tracking-[0.18em] text-outline">
                       {row.selectedCheckCategories.length} checks
                     </span>
                   </div>
@@ -379,11 +380,12 @@ export default function AdminDashboard({ rows }: AdminDashboardProps) {
                             checks.map((check) => (
                               <div
                                 key={check.label}
-                                className="inline-flex flex-col gap-1 rounded-2xl border border-primary-fixed-dim bg-primary-fixed px-3 py-2"
+                                className="inline-flex flex-col gap-1 border border-outline-variant/20"
                               >
                                 <Badge
                                   status="processing"
                                   label={check.label}
+                                  className="border border-outline-variant/20"
                                 />
                                 <span className="text-[11px] font-medium text-on-surface-variant">
                                   {check.value
@@ -404,7 +406,7 @@ export default function AdminDashboard({ rows }: AdminDashboardProps) {
 
                   <Link
                     href={`/admin/orders/${encodeURIComponent(row.trackingNumber)}`}
-                    className="mt-5 inline-flex rounded-full border border-[#f0ca52] bg-primary px-4 py-2 text-xs font-bold uppercase tracking-[0.18em] text-[color:var(--color-on-primary)] transition-colors hover:bg-primary-container"
+                    className="mt-5 inline-flex border border-outline-variant/20 bg-primary px-4 py-2 text-xs font-bold uppercase tracking-[0.18em] text-on-primary transition-colors hover:bg-primary-container hover:text-on-primary-container"
                   >
                     Open Case
                   </Link>
@@ -414,7 +416,7 @@ export default function AdminDashboard({ rows }: AdminDashboardProps) {
           )}
 
           {filteredRows.length === 0 ? (
-            <div className="rounded-[1.6rem] border border-amber-100 bg-[#fffaf0] px-6 py-12 text-center text-sm text-on-surface-variant">
+            <div className="border border-outline-variant/20 bg-surface-container-low px-6 py-12 text-center text-sm text-on-surface-variant">
               No cases matched the current search and filter settings.
             </div>
           ) : null}

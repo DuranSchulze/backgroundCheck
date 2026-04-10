@@ -1,7 +1,10 @@
 import { PrismaClient } from "@/lib/generated/prisma/client";
 
+const PRISMA_CLIENT_BUILD_ID = "2026-04-10-public-task-step-tracking";
+
 declare global {
   var prisma: PrismaClient | undefined;
+  var prismaBuildId: string | undefined;
 }
 
 function createPrismaClient() {
@@ -18,8 +21,10 @@ function createPrismaClient() {
 }
 
 export function getPrismaClient() {
-  if (!globalThis.prisma) {
+  if (!globalThis.prisma || globalThis.prismaBuildId !== PRISMA_CLIENT_BUILD_ID) {
+    globalThis.prisma?.$disconnect?.().catch(() => undefined);
     globalThis.prisma = createPrismaClient();
+    globalThis.prismaBuildId = PRISMA_CLIENT_BUILD_ID;
   }
 
   return globalThis.prisma;

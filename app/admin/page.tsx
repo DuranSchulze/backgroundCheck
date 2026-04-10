@@ -1,16 +1,19 @@
+import Link from "next/link";
 import { redirect } from "next/navigation";
-import { clearAdminSession, isAdminAuthenticated } from "@/lib/admin-auth";
-import AdminDashboard from "@/components/admin/AdminDashboard";
+import {
+  ClipboardList,
+  Database,
+  Rows3,
+  TableProperties,
+  UserCog,
+} from "lucide-react";
+import { isAdminAuthenticated } from "@/lib/admin-auth";
+import AdminShell from "@/components/admin/AdminShell";
 import { listSheetOrderSnapshots } from "@/lib/tracking/google-sheets";
+import { listStaffUsers } from "@/lib/tracking/staff";
+import type { StaffUserView } from "@/lib/tracking/types";
 
 export const dynamic = "force-dynamic";
-
-async function logout() {
-  "use server";
-
-  await clearAdminSession();
-  redirect("/admin/login");
-}
 
 export default async function AdminPage() {
   const isAuthenticated = await isAdminAuthenticated();
@@ -21,6 +24,7 @@ export default async function AdminPage() {
 
   let rows: Awaited<ReturnType<typeof listSheetOrderSnapshots>> = [];
   let loadError: string | null = null;
+  let staff: StaffUserView[] = [];
 
   try {
     rows = await listSheetOrderSnapshots();
@@ -31,83 +35,131 @@ export default async function AdminPage() {
         : "Unable to load Google Sheets rows.";
   }
 
+  try {
+    staff = await listStaffUsers();
+  } catch {
+    staff = [];
+  }
+
   return (
-    <main className="min-h-screen bg-[radial-gradient(circle_at_top,_rgba(255,192,0,0.18),_transparent_45%),linear-gradient(180deg,#fffdf6_0%,#fffbef_100%)] px-6 py-10 md:px-10">
-      <section className="mx-auto max-w-6xl space-y-8">
-        <div className="flex flex-col gap-4 rounded-[2rem] border border-amber-200 bg-white/90 p-6 shadow-[0_18px_60px_rgba(66,44,0,0.08)] md:flex-row md:items-end md:justify-between">
-          <div>
-            <p className="text-[11px] font-bold uppercase tracking-[0.28em] text-outline">
-              Operations Console
-            </p>
-            <h1 className="mt-2 font-headline text-3xl font-extrabold text-on-surface md:text-4xl">
-              Background Check Project Tracker
-            </h1>
-            <p className="mt-3 max-w-2xl text-sm leading-7 text-on-surface-variant">
-              Manage the live case queue, inspect project intake, and move into
-              each order&apos;s tracking workspace from a single admin surface.
-            </p>
+    <AdminShell
+      eyebrow="Operations Console"
+      title="Dashboard"
+      description="This dashboard is being prepared as the future control center for operations insights, workflow summaries, and system-wide tracking."
+      maxWidthClassName="max-w-6xl"
+    >
+      <div className="grid gap-4 md:grid-cols-3">
+        <div className="border border-outline-variant/20 bg-white p-5">
+          <div className="mb-3 flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.22em] text-outline">
+            <Database className="h-3.5 w-3.5 text-primary" />
+            Source
           </div>
+          <p className="text-lg font-headline font-bold text-on-surface">
+            Google Sheets
+          </p>
+          <p className="mt-2 text-sm text-on-surface-variant">
+            Using the local service-account JSON file on the server.
+          </p>
+        </div>
 
-          <form action={logout}>
-            <button
-              type="submit"
-              className="rounded-full border border-[#f0ca52] bg-primary px-5 py-3 text-sm font-bold uppercase tracking-[0.18em] text-[color:var(--color-on-primary)] transition-colors hover:bg-primary-container"
+        <div className="border border-outline-variant/20 bg-white p-5">
+          <div className="mb-3 flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.22em] text-outline">
+            <Rows3 className="h-3.5 w-3.5 text-primary" />
+            Rows Loaded
+          </div>
+          <p className="text-lg font-headline font-bold text-on-surface">
+            {loadError ? "Unavailable" : rows.length}
+          </p>
+          <p className="mt-2 text-sm text-on-surface-variant">
+            Active order rows currently visible from the configured sheet range.
+          </p>
+        </div>
+
+        <div className="border border-outline-variant/20 bg-white p-5">
+          <div className="mb-3 flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.22em] text-outline">
+            <TableProperties className="h-3.5 w-3.5 text-primary" />
+            Columns Verified
+          </div>
+          <p className="text-lg font-headline font-bold text-on-surface">
+            Order Tracking Number, Email
+          </p>
+          <p className="mt-2 text-sm text-on-surface-variant">
+            Queue browsing is optimized with search, filters, views, and
+            pagination.
+          </p>
+        </div>
+      </div>
+
+      {loadError ? (
+        <section className="border border-error/30 bg-error-container p-4 text-sm text-error">
+          {loadError}
+        </section>
+      ) : null}
+
+      <section className="grid gap-6 xl:grid-cols-[1.1fr_0.9fr]">
+        <div className="border border-outline-variant/20 bg-white p-6">
+          <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-outline">
+            Dashboard Placeholder
+          </p>
+          <h2 className="mt-2 font-headline text-2xl font-bold text-on-surface">
+            Future admin overview goes here
+          </h2>
+          <p className="mt-3 text-sm leading-7 text-on-surface-variant">
+            This page is reserved for the upcoming dashboard feature. For now,
+            use the navigation to jump straight to the live order queue and
+            assignee directory.
+          </p>
+          <div className="mt-6 flex flex-wrap gap-3">
+            <Link
+              href="/admin/orders"
+              className="inline-flex items-center gap-2 border border-[#f0ca52] bg-primary px-4 py-2.5 text-xs font-bold uppercase tracking-[0.18em] text-on-primary transition-colors hover:bg-primary-container hover:text-on-primary-container"
             >
-              Logout
-            </button>
-          </form>
-        </div>
-
-        <div className="grid gap-4 md:grid-cols-3">
-          <div className="rounded-[1.6rem] border border-amber-200 bg-white p-5">
-            <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-outline">
-              Source
-            </p>
-            <p className="mt-3 text-lg font-headline font-bold text-on-surface">
-              Google Sheets
-            </p>
-            <p className="mt-2 text-sm text-on-surface-variant">
-              Using the local service-account JSON file on the server.
-            </p>
-          </div>
-
-          <div className="rounded-[1.6rem] border border-amber-200 bg-white p-5">
-            <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-outline">
-              Rows Loaded
-            </p>
-            <p className="mt-3 text-lg font-headline font-bold text-on-surface">
-              {loadError ? "Unavailable" : rows.length}
-            </p>
-            <p className="mt-2 text-sm text-on-surface-variant">
-              Active order rows currently visible from the configured sheet range.
-            </p>
-          </div>
-
-          <div className="rounded-[1.6rem] border border-amber-200 bg-white p-5">
-            <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-outline">
-              Columns Verified
-            </p>
-            <p className="mt-3 text-lg font-headline font-bold text-on-surface">
-              Order Tracking Number, Email
-            </p>
-            <p className="mt-2 text-sm text-on-surface-variant">
-              Queue browsing is optimized with search, filters, views, and pagination.
-            </p>
+              <ClipboardList className="h-3.5 w-3.5" />
+              Open Order List
+            </Link>
+            <Link
+              href="/admin/assignees"
+              className="inline-flex items-center gap-2 border border-outline-variant/40 bg-white px-4 py-2.5 text-xs font-bold uppercase tracking-[0.18em] text-on-surface transition-colors hover:border-primary"
+            >
+              <UserCog className="h-3.5 w-3.5" />
+              Manage Assignees
+            </Link>
           </div>
         </div>
 
-        {loadError ? (
-          <section className="rounded-[2rem] border border-amber-200 bg-white p-6 text-sm text-error shadow-[0_18px_60px_rgba(66,44,0,0.06)]">
-            {loadError}
-          </section>
-        ) : rows.length === 0 ? (
-          <section className="rounded-[2rem] border border-amber-200 bg-white p-6 text-sm text-on-surface-variant shadow-[0_18px_60px_rgba(66,44,0,0.06)]">
-            No rows were returned from the configured Google Sheet range.
-          </section>
-        ) : (
-          <AdminDashboard rows={rows} />
-        )}
+        <div className="border border-outline-variant/20 bg-white p-6">
+          <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-outline">
+            Quick Status
+          </p>
+          <div className="mt-5 space-y-3 text-sm text-on-surface-variant">
+            <div className="border border-outline-variant/20 bg-surface-container-low p-4">
+              <div className="text-[10px] font-bold uppercase tracking-[0.16em] text-outline">
+                Orders Available
+              </div>
+              <div className="mt-2 text-2xl font-headline font-extrabold text-on-surface">
+                {loadError ? "—" : rows.length}
+              </div>
+            </div>
+            <div className="border border-outline-variant/20 bg-surface-container-low p-4">
+              <div className="text-[10px] font-bold uppercase tracking-[0.16em] text-outline">
+                Active Assignees
+              </div>
+              <div className="mt-2 text-2xl font-headline font-extrabold text-on-surface">
+                {staff.filter((member) => member.isActive).length}
+              </div>
+            </div>
+            <div className="border border-outline-variant/20 bg-surface-container-low p-4">
+              <div className="text-[10px] font-bold uppercase tracking-[0.16em] text-outline">
+                Next Step
+              </div>
+              <p className="mt-2 leading-6">
+                Build the future dashboard widgets here without crowding the
+                live order queue.
+              </p>
+            </div>
+          </div>
+        </div>
       </section>
-    </main>
+    </AdminShell>
   );
 }

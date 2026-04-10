@@ -1,7 +1,10 @@
 import { createSign } from "node:crypto";
 import { readFile } from "node:fs/promises";
 import path from "node:path";
-import { normalizeReferenceNumber } from "@/lib/tracking/normalize";
+import {
+  getReferenceAliases,
+  normalizeReferenceNumber,
+} from "@/lib/tracking/normalize";
 import type { CheckCategory, SheetOrderSnapshot } from "@/lib/tracking/types";
 
 type HeaderMap = Map<string, number>;
@@ -393,7 +396,7 @@ export function mapSheetRowToOrderSnapshot(headerRow: string[], row: string[]) {
 }
 
 export async function findOrderRowByTrackingNumber(trackingNumber: string) {
-  const normalizedReference = normalizeReferenceNumber(trackingNumber);
+  const referenceAliases = getReferenceAliases(trackingNumber);
   const rows = await readSheetRows();
 
   if (rows.length === 0) {
@@ -406,7 +409,7 @@ export async function findOrderRowByTrackingNumber(trackingNumber: string) {
 
   const matchedRow = dataRows.find((row) => {
     const currentTrackingNumber = getCellValue(row, headerMap, "Order Tracking Number");
-    return normalizeReferenceNumber(currentTrackingNumber) === normalizedReference;
+    return referenceAliases.has(normalizeReferenceNumber(currentTrackingNumber));
   });
 
   if (!matchedRow) {
