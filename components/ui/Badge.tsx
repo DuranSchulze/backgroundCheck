@@ -20,31 +20,28 @@ const statusConfig: Record<
 > = {
   completed: {
     label: "Completed",
-    classes:
-      "border border-[#e8d28c] bg-[#fff7da] text-[color:var(--color-on-primary-fixed)]",
-    dotColor: "bg-primary",
+    classes: "border border-emerald-200 bg-emerald-50 text-emerald-700",
+    dotColor: "bg-emerald-600",
   },
   "in-progress": {
     label: "In Progress",
-    classes:
-      "border border-[#f0ca52] bg-primary text-[color:var(--color-on-primary)]",
-    dotColor: "bg-[color:var(--color-on-primary)]",
+    classes: "border border-slate-300 bg-slate-900 text-white",
+    dotColor: "bg-white",
   },
   "active-investigation": {
     label: "Active Investigation",
-    classes: "border border-[#eec07c] bg-[#fff0cf] text-[#8a5207]",
-    dotColor: "bg-[#b96b12]",
+    classes: "border border-slate-300 bg-slate-100 text-slate-700",
+    dotColor: "bg-slate-600",
   },
   processing: {
     label: "Processing",
-    classes:
-      "bg-primary-fixed px-2 py-0.5 text-[color:var(--color-on-primary-fixed)]",
-    dotColor: "bg-primary",
+    classes: "border border-slate-200 bg-white px-2 py-0.5 text-slate-700",
+    dotColor: "bg-slate-700",
   },
   success: {
     label: "Success",
-    classes: "text-[10px] font-bold uppercase text-[#8a6a00]",
-    dotColor: "bg-primary",
+    classes: "text-[10px] font-bold uppercase text-emerald-700",
+    dotColor: "bg-emerald-600",
   },
   queued: {
     label: "Queued",
@@ -70,7 +67,7 @@ export default function Badge({
 
   if (variant === "dot") {
     return (
-      <span className="inline-flex items-center gap-1.5 border border-primary-fixed-dim bg-primary-fixed px-3 py-1 text-[10px] font-bold uppercase tracking-widest text-[color:var(--color-on-primary-fixed)]">
+      <span className="inline-flex items-center gap-1.5 border border-slate-200 bg-white px-3 py-1 text-[10px] font-bold uppercase tracking-widest text-slate-700">
         <span
           className={["w-1.5 h-1.5 rounded-full animate-pulse", config.dotColor]
             .filter(Boolean)

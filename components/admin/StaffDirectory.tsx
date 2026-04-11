@@ -152,7 +152,7 @@ export default function StaffDirectory({ staff }: StaffDirectoryProps) {
         : "Save Changes";
 
   return (
-    <section className="border border-outline-variant/20 bg-white p-6">
+    <section className="rounded-lg border border-outline-variant/20 bg-white p-6">
       <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
         <div>
           <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-outline">
@@ -173,7 +173,7 @@ export default function StaffDirectory({ staff }: StaffDirectoryProps) {
           <button
             type="button"
             onClick={openCreateDialog}
-            className="inline-flex items-center gap-2 border border-[#f0ca52] bg-primary px-5 py-2.5 text-xs font-bold uppercase tracking-[0.18em] text-on-primary transition hover:bg-primary-container hover:text-on-primary-container"
+            className="inline-flex items-center gap-2 rounded-md border border-on-surface bg-on-surface px-5 py-2.5 text-xs font-bold uppercase tracking-[0.18em] text-white transition hover:bg-on-surface/85"
           >
             <Plus className="h-4 w-4" />
             Add Person
@@ -198,7 +198,7 @@ export default function StaffDirectory({ staff }: StaffDirectoryProps) {
           staff.map((member) => (
             <div
               key={member.id}
-              className="grid gap-4 border border-outline-variant/20 bg-surface-container-low p-4 md:grid-cols-[1.2fr_1fr_auto_auto]"
+              className="grid gap-4 rounded-lg border border-outline-variant/20 bg-surface-container-low p-4 md:grid-cols-[1.2fr_1fr_auto_auto]"
             >
               <div className="min-w-0">
                 <p className="text-sm font-semibold text-on-surface">
@@ -226,7 +226,7 @@ export default function StaffDirectory({ staff }: StaffDirectoryProps) {
                 type="button"
                 onClick={() => openEditDialog(member)}
                 disabled={isPending}
-                className="inline-flex items-center justify-center gap-2 border border-outline-variant/30 bg-white px-4 py-2.5 text-xs font-bold uppercase tracking-[0.18em] text-on-surface transition hover:border-primary disabled:opacity-50"
+                className="inline-flex items-center justify-center gap-2 rounded-md border border-outline-variant/30 bg-white px-4 py-2.5 text-xs font-bold uppercase tracking-[0.18em] text-on-surface transition hover:border-on-surface disabled:opacity-50"
               >
                 <Pencil className="h-3.5 w-3.5" />
                 Edit
@@ -240,7 +240,7 @@ export default function StaffDirectory({ staff }: StaffDirectoryProps) {
                   "px-4 py-2.5 text-xs font-bold uppercase tracking-[0.18em] transition disabled:opacity-50",
                   member.isActive
                     ? "border border-red-200 bg-white text-red-600 hover:border-red-400"
-                    : "border border-outline-variant/30 bg-white text-on-surface hover:border-primary",
+                    : "border border-outline-variant/30 bg-white text-on-surface hover:border-on-surface",
                 ].join(" ")}
               >
                 {member.isActive ? "Deactivate" : "Reactivate"}
@@ -282,7 +282,7 @@ export default function StaffDirectory({ staff }: StaffDirectoryProps) {
                     }))
                   }
                   placeholder="e.g. Maria Santos"
-                  className="w-full border border-outline-variant bg-white px-4 py-3 text-sm text-on-surface outline-none transition-colors focus:border-primary disabled:cursor-not-allowed disabled:bg-surface-container-low disabled:text-outline"
+                  className="w-full rounded-md border border-outline-variant bg-white px-4 py-3 text-sm text-on-surface outline-none transition-colors focus:border-on-surface disabled:cursor-not-allowed disabled:bg-surface-container-low disabled:text-outline"
                   required
                 />
               </div>
@@ -305,7 +305,7 @@ export default function StaffDirectory({ staff }: StaffDirectoryProps) {
                     }))
                   }
                   placeholder="name@example.com"
-                  className="w-full border border-outline-variant bg-white px-4 py-3 text-sm text-on-surface outline-none transition-colors focus:border-primary disabled:cursor-not-allowed disabled:bg-surface-container-low disabled:text-outline"
+                  className="w-full rounded-md border border-outline-variant bg-white px-4 py-3 text-sm text-on-surface outline-none transition-colors focus:border-on-surface disabled:cursor-not-allowed disabled:bg-surface-container-low disabled:text-outline"
                   required
                 />
               </div>
@@ -322,14 +322,14 @@ export default function StaffDirectory({ staff }: StaffDirectoryProps) {
                 type="button"
                 onClick={() => closeDialog(false)}
                 disabled={isPending}
-                className="border border-outline-variant/30 bg-white px-5 py-2.5 text-xs font-bold uppercase tracking-[0.18em] text-on-surface transition hover:border-primary disabled:opacity-50"
+                className="rounded-md border border-outline-variant/30 bg-white px-5 py-2.5 text-xs font-bold uppercase tracking-[0.18em] text-on-surface transition hover:border-on-surface disabled:opacity-50"
               >
                 Cancel
               </button>
               <button
                 type="submit"
                 disabled={isPending || !form.name.trim() || !form.email.trim()}
-                className="border border-[#f0ca52] bg-primary px-5 py-2.5 text-xs font-bold uppercase tracking-[0.18em] text-on-primary transition hover:bg-primary-container hover:text-on-primary-container disabled:opacity-50"
+                className="rounded-md border border-on-surface bg-on-surface px-5 py-2.5 text-xs font-bold uppercase tracking-[0.18em] text-white transition hover:bg-on-surface/85 disabled:opacity-50"
               >
                 {submitLabel}
               </button>

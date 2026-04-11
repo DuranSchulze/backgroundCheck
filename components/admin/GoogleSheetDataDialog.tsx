@@ -31,7 +31,7 @@ export default function GoogleSheetDataDialog({
             variant="outline"
             size="icon-sm"
             title="View Google Sheet data"
-            className="shrink-0 border-outline-variant/30 bg-surface-container-low text-outline hover:border-primary hover:bg-white hover:text-on-surface"
+            className="shrink-0 border-outline-variant/30 bg-surface-container-low text-outline hover:border-on-surface hover:bg-white hover:text-on-surface"
           >
             <Maximize2Icon className="size-4" />
             <span className="sr-only">View Sheet Data</span>
@@ -80,7 +80,7 @@ export default function GoogleSheetDataDialog({
                         href={value}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="font-medium text-primary hover:underline"
+                        className="font-medium text-on-surface hover:underline"
                       >
                         {value}
                       </a>

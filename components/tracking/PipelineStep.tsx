@@ -26,7 +26,7 @@ const iconByStatus: Record<StepStatus, ReactElement> = {
     </svg>
   ),
   "in-progress": (
-    <div className="w-2.5 h-2.5 bg-primary rounded-full animate-pulse" />
+    <div className="h-2.5 w-2.5 animate-pulse rounded-full bg-on-surface" />
   ),
   queued: (
     <svg
@@ -41,14 +41,14 @@ const iconByStatus: Record<StepStatus, ReactElement> = {
 };
 
 const iconContainerByStatus: Record<StepStatus, string> = {
-  completed: "bg-[#1f1a0d] text-white shadow-lg shadow-amber-100",
-  "in-progress": "border-2 border-primary bg-white shadow-md shadow-amber-100",
+  completed: "bg-on-surface text-white",
+  "in-progress": "border-2 border-on-surface bg-white",
   queued: "bg-surface-container-high text-outline",
 };
 
 const textColorByStatus: Record<StepStatus, string> = {
   completed: "text-on-surface",
-  "in-progress": "text-primary",
+  "in-progress": "text-on-surface",
   queued: "text-outline",
 };
 
@@ -67,11 +67,11 @@ export default function PipelineStep({
   return (
     <div className="relative flex gap-5 pb-9 last:pb-0 md:gap-6 md:pb-10">
       {!isLast && (
-        <div className="absolute left-4 top-8 bottom-0 w-[2px] bg-primary-fixed"></div>
+        <div className="absolute bottom-0 left-4 top-8 w-[2px] bg-outline-variant/40"></div>
       )}
       <div
         className={[
-          "z-10 w-8 h-8 rounded-full flex items-center justify-center shrink-0",
+          "z-10 flex h-8 w-8 shrink-0 items-center justify-center rounded-full",
           iconContainerByStatus[status],
         ].join(" ")}
       >

@@ -65,7 +65,7 @@ export default function ServiceCheckList({
           <button
             onClick={handleSync}
             disabled={isPending}
-            className="inline-flex items-center gap-2 border border-[#f0ca52] bg-primary px-5 py-2.5 text-xs font-bold uppercase tracking-[0.18em] text-on-primary transition hover:bg-primary-container hover:text-on-primary-container disabled:opacity-50"
+            className="inline-flex items-center gap-2 rounded-md border border-on-surface bg-on-surface px-5 py-2.5 text-xs font-bold uppercase tracking-[0.18em] text-white transition hover:bg-on-surface/85 disabled:opacity-50"
           >
             {isPending ? "Syncing…" : "Sync Checks from Sheet"}
           </button>
@@ -87,7 +87,7 @@ export default function ServiceCheckList({
         <Link
           key={check.id}
           href={`/admin/orders/${encodeURIComponent(trackingNumber)}/checks/${check.id}`}
-          className="group flex items-center justify-between gap-4 border border-outline-variant/20 bg-surface-container-low px-5 py-4 transition hover:border-primary hover:bg-white"
+          className="group flex items-center justify-between gap-4 rounded-lg border border-outline-variant/20 bg-surface-container-low px-5 py-4 transition hover:border-on-surface hover:bg-white"
         >
           <div className="min-w-0 flex-1">
             <p className="truncate text-sm font-semibold text-on-surface">

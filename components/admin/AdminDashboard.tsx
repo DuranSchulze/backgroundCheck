@@ -178,14 +178,14 @@ export default function AdminDashboard({ rows }: AdminDashboardProps) {
               className={[
                 "border p-4 text-left transition-colors",
                 active
-                  ? "border-primary bg-primary"
-                  : "border-outline-variant/20 bg-white hover:border-primary/40 hover:bg-surface-container-low",
+                  ? "border-on-surface bg-on-surface"
+                  : "border-outline-variant/20 bg-white hover:border-on-surface/40 hover:bg-surface-container-low",
               ].join(" ")}
             >
               <div
                 className={[
                   "flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.22em]",
-                  active ? "text-on-primary/70" : "text-outline",
+                  active ? "text-white/70" : "text-outline",
                 ].join(" ")}
               >
                 {stat.icon}
@@ -194,7 +194,7 @@ export default function AdminDashboard({ rows }: AdminDashboardProps) {
               <div
                 className={[
                   "mt-3 font-headline text-3xl font-extrabold",
-                  active ? "text-on-primary" : "text-on-surface",
+                  active ? "text-white" : "text-on-surface",
                 ].join(" ")}
               >
                 {stat.value}
@@ -220,13 +220,13 @@ export default function AdminDashboard({ rows }: AdminDashboardProps) {
 
           <div className="flex shrink-0 items-center gap-2">
             <div className="relative flex items-center">
-              <ListFilter className="pointer-events-none absolute left-3 h-3.5 w-3.5 text-primary" />
+              <ListFilter className="pointer-events-none absolute left-3 h-3.5 w-3.5 text-outline" />
               <select
                 value={filterMode}
                 onChange={(event) =>
                   updateFilter(event.target.value as FilterMode)
                 }
-                className="appearance-none border border-outline-variant/30 bg-white py-2.5 pl-8 pr-7 text-xs font-bold uppercase tracking-[0.18em] text-on-surface outline-none transition-colors focus:border-primary"
+                className="appearance-none border border-outline-variant/30 bg-white py-2.5 pl-8 pr-7 text-xs font-bold uppercase tracking-[0.18em] text-on-surface outline-none transition-colors focus:border-on-surface"
               >
                 <option value="all">All Cases</option>
                 <option value="with-checks">With Checks</option>
@@ -244,7 +244,7 @@ export default function AdminDashboard({ rows }: AdminDashboardProps) {
                 className={[
                   "inline-flex items-center justify-center p-2 transition-colors",
                   viewMode === "table"
-                    ? "bg-primary text-on-primary"
+                    ? "bg-on-surface text-white"
                     : "text-on-surface-variant hover:text-on-surface",
                 ].join(" ")}
               >
@@ -257,7 +257,7 @@ export default function AdminDashboard({ rows }: AdminDashboardProps) {
                 className={[
                   "inline-flex items-center justify-center p-2 transition-colors",
                   viewMode === "card"
-                    ? "bg-primary text-on-primary"
+                    ? "bg-on-surface text-white"
                     : "text-on-surface-variant hover:text-on-surface",
                 ].join(" ")}
               >
@@ -285,7 +285,7 @@ export default function AdminDashboard({ rows }: AdminDashboardProps) {
                   updateFilter("all");
                   updateSearch("");
                 }}
-                className="ml-2 text-[10px] font-bold uppercase tracking-[0.16em] text-primary hover:underline"
+                className="ml-2 text-[10px] font-bold uppercase tracking-[0.16em] text-on-surface hover:underline"
               >
                 Clear filters
               </button>
@@ -394,7 +394,7 @@ export default function AdminDashboard({ rows }: AdminDashboardProps) {
                         <td className="px-4 py-4">
                           <Link
                             href={`/admin/orders/${encodeURIComponent(row.trackingNumber)}`}
-                            className="inline-flex border border-[#f0ca52] bg-primary px-4 py-2 text-xs font-bold uppercase tracking-[0.18em] text-on-primary transition-colors hover:bg-primary-container hover:text-on-primary-container"
+                            className="inline-flex rounded-md border border-on-surface bg-on-surface px-4 py-2 text-xs font-bold uppercase tracking-[0.18em] text-white transition-colors hover:bg-on-surface/85"
                           >
                             Open
                           </Link>
@@ -412,7 +412,7 @@ export default function AdminDashboard({ rows }: AdminDashboardProps) {
                 return (
                   <div
                     key={row.trackingNumber}
-                    className="flex flex-col border border-outline-variant/20 bg-white"
+                    className="flex flex-col rounded-lg border border-outline-variant/20 bg-white"
                   >
                     {/* Card header */}
                     <div className="flex items-center justify-between gap-3 border-b border-outline-variant/20 bg-surface-container-low px-4 py-3">
@@ -501,7 +501,7 @@ export default function AdminDashboard({ rows }: AdminDashboardProps) {
                     <div className="border-t border-outline-variant/20 px-4 py-3">
                       <Link
                         href={`/admin/orders/${encodeURIComponent(row.trackingNumber)}`}
-                        className="inline-flex border border-[#f0ca52] bg-primary px-4 py-2 text-xs font-bold uppercase tracking-[0.18em] text-on-primary transition-colors hover:bg-primary-container hover:text-on-primary-container"
+                        className="inline-flex rounded-md border border-on-surface bg-on-surface px-4 py-2 text-xs font-bold uppercase tracking-[0.18em] text-white transition-colors hover:bg-on-surface/85"
                       >
                         Open Case →
                       </Link>

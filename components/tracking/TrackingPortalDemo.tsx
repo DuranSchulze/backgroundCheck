@@ -89,19 +89,24 @@ export default function TrackingPortalDemo() {
         <AnimatePresence>
           {isResultsOpen && (
             <m.div
-              className="fixed inset-0 z-50 flex items-center justify-center bg-[rgba(35,27,8,0.32)] p-4 sm:p-6 lg:p-8"
+              className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 sm:p-6 lg:p-8"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               transition={{ duration: 0.2, ease: "easeOut" }}
             >
-              <div
-                className="absolute inset-0"
+              <button
+                type="button"
+                className="absolute inset-0 cursor-default"
                 onClick={() => setIsResultsOpen(false)}
+                aria-label="Close tracking details"
               />
 
               <m.div
-                className="relative z-10 flex max-h-[calc(100dvh-2rem)] w-full max-w-3xl flex-col overflow-hidden rounded-none border border-outline-variant bg-white sm:max-h-[calc(100dvh-3rem)]"
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby="tracking-results-title"
+                className="relative z-10 flex max-h-[calc(100dvh-2rem)] w-full max-w-3xl flex-col overflow-hidden rounded-lg border border-border bg-white shadow-lg sm:max-h-[calc(100dvh-3rem)]"
                 initial={{ opacity: 0, y: 26, scale: 0.985 }}
                 animate={{ opacity: 1, y: 0, scale: 1 }}
                 exit={{ opacity: 0, y: 18, scale: 0.985 }}
@@ -110,11 +115,14 @@ export default function TrackingPortalDemo() {
                 <div className="border-b border-outline-variant/30 bg-white px-5 py-4 sm:px-6">
                   <div className="flex items-start justify-between gap-4">
                     <div className="min-w-0">
-                      <div className="inline-flex items-center gap-2 rounded border border-outline-variant/40 bg-surface-container-low px-3 py-1 text-[10px] font-bold uppercase tracking-[0.24em] text-outline">
-                        <ShieldCheck className="h-3.5 w-3.5 text-primary" />
+                      <div className="inline-flex items-center gap-2 rounded-md border border-outline-variant/40 bg-surface-container-low px-3 py-1 text-[10px] font-bold uppercase tracking-[0.24em] text-outline">
+                        <ShieldCheck className="h-3.5 w-3.5 text-on-surface" />
                         Background Checking
                       </div>
-                      <h2 className="mt-3 font-headline text-xl font-bold text-on-surface sm:text-2xl">
+                      <h2
+                        id="tracking-results-title"
+                        className="mt-3 font-headline text-xl font-bold text-on-surface sm:text-2xl"
+                      >
                         {isLookupLoading
                           ? "Fetching Tracking Details"
                           : record
@@ -122,7 +130,7 @@ export default function TrackingPortalDemo() {
                             : "Reference Not Found"}
                       </h2>
                       <p className="mt-2 flex items-center gap-2 text-sm text-on-surface-variant">
-                        <Fingerprint className="h-4 w-4 text-primary" />
+                        <Fingerprint className="h-4 w-4 text-outline" />
                         {lastSearch
                           ? `Lookup for ${lastSearch}`
                           : "Enter a reference number to view the case details."}
@@ -132,7 +140,7 @@ export default function TrackingPortalDemo() {
                     <m.button
                       type="button"
                       onClick={() => setIsResultsOpen(false)}
-                      className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded border border-outline-variant/40 bg-white text-on-surface transition-colors hover:bg-surface-container-low"
+                      className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-md border border-outline-variant/40 bg-white text-on-surface transition-colors hover:bg-surface-container-low"
                       aria-label="Close tracking details"
                       whileHover={{ rotate: 90 }}
                       transition={{ duration: 0.2 }}
@@ -145,14 +153,14 @@ export default function TrackingPortalDemo() {
                 <div className="overflow-y-auto px-5 py-5 sm:px-6">
                   {isLookupLoading ? (
                     <m.div
-                      className="border border-outline-variant/30 bg-white p-10 text-center"
+                      className="rounded-lg border border-outline-variant/30 bg-white p-10 text-center"
                       initial={{ opacity: 0, y: 16 }}
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, y: 10 }}
                       transition={{ duration: 0.24, ease: easeOut }}
                     >
                       <m.div
-                        className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded bg-primary-fixed text-primary"
+                        className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-md border border-outline-variant/30 bg-surface-container-low text-on-surface"
                         animate={{ rotate: 360 }}
                         transition={{
                           repeat: Number.POSITIVE_INFINITY,
@@ -203,12 +211,12 @@ export default function TrackingPortalDemo() {
                           className="py-5"
                         >
                           <div className="mb-3 flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.24em] text-outline">
-                            <FileSearch className="h-3.5 w-3.5 text-primary" />
+                            <FileSearch className="h-3.5 w-3.5 text-on-surface" />
                             Case Summary
                           </div>
                           <p className="text-sm leading-7 text-on-surface-variant">
                             <m.span
-                              className="mr-2 inline-flex rounded bg-primary-fixed px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-[0.18em] text-[color:var(--color-on-primary-fixed)]"
+                              className="mr-2 inline-flex rounded-md border border-outline-variant/30 bg-surface-container-low px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-[0.18em] text-outline"
                               initial={{ opacity: 0, scale: 0.96 }}
                               animate={{ opacity: 1, scale: 1 }}
                               transition={{ duration: 0.24, delay: 0.18 }}
@@ -243,7 +251,7 @@ export default function TrackingPortalDemo() {
                           className="py-5"
                         >
                           <div className="mb-5 flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.24em] text-outline">
-                            <ShieldCheck className="h-3.5 w-3.5 text-primary" />
+                            <ShieldCheck className="h-3.5 w-3.5 text-on-surface" />
                             Verification Pipeline
                           </div>
                           <VerificationPipeline steps={record.pipelineSteps} />
@@ -262,7 +270,7 @@ export default function TrackingPortalDemo() {
                           className="py-5"
                         >
                           <div className="mb-4 flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.24em] text-outline">
-                            <ClipboardList className="h-3.5 w-3.5 text-primary" />
+                            <ClipboardList className="h-3.5 w-3.5 text-on-surface" />
                             Request Metadata
                           </div>
                           <RequestMetadata fields={record.metadataFields} />
@@ -279,7 +287,7 @@ export default function TrackingPortalDemo() {
                           className="py-5"
                         >
                           <div className="mb-4 flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.24em] text-outline">
-                            <Activity className="h-3.5 w-3.5 text-primary" />
+                            <Activity className="h-3.5 w-3.5 text-on-surface" />
                             Recent Activity
                           </div>
                           <RecentActivity items={record.recentActivity} />
@@ -288,14 +296,14 @@ export default function TrackingPortalDemo() {
                     </div>
                   ) : (
                     <m.div
-                      className="bg-white p-10 text-center"
+                      className="rounded-lg bg-white p-10 text-center"
                       initial={{ opacity: 0, y: 22, scale: 0.98 }}
                       animate={{ opacity: 1, y: 0, scale: 1 }}
                       exit={{ opacity: 0, y: 12 }}
                       transition={{ duration: 0.3, ease: easeOut }}
                     >
                       <m.div
-                        className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded bg-primary-fixed text-primary"
+                        className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-md border border-outline-variant/30 bg-surface-container-low text-on-surface"
                         initial={{ scale: 0.92, opacity: 0 }}
                         animate={{ scale: 1, opacity: 1 }}
                         transition={{ duration: 0.3, ease: easeOut }}

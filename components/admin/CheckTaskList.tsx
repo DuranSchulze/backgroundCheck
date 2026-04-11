@@ -45,20 +45,20 @@ const STATUS_COLUMNS: Array<{
   {
     value: "IN_PROGRESS",
     label: "In Progress",
-    tone: "border-sky-200 bg-sky-50/90",
-    accent: "bg-sky-500",
+    tone: "border-slate-300 bg-white",
+    accent: "bg-slate-900",
   },
   {
     value: "ACTIVE_INVESTIGATION",
     label: "Investigating",
-    tone: "border-violet-200 bg-violet-50/90",
-    accent: "bg-violet-500",
+    tone: "border-slate-300 bg-slate-50/90",
+    accent: "bg-slate-700",
   },
   {
     value: "ON_HOLD",
     label: "Blocked",
-    tone: "border-amber-200 bg-amber-50/90",
-    accent: "bg-amber-500",
+    tone: "border-slate-300 bg-slate-100/90",
+    accent: "bg-slate-600",
   },
   {
     value: "COMPLETED",
@@ -143,9 +143,9 @@ function priorityTone(priority: TaskPriority) {
     case "URGENT":
       return "border-red-200 bg-red-50 text-red-700";
     case "HIGH":
-      return "border-orange-200 bg-orange-50 text-orange-700";
+      return "border-red-100 bg-white text-red-600";
     case "MEDIUM":
-      return "border-sky-200 bg-sky-50 text-sky-700";
+      return "border-slate-300 bg-slate-100 text-slate-700";
     case "LOW":
     default:
       return "border-slate-200 bg-slate-50 text-slate-700";
@@ -482,7 +482,7 @@ export default function CheckTaskList({
     <div className={fullScreen ? "space-y-5" : "space-y-6"}>
       <section
         className={[
-          "border border-outline-variant/20 bg-white",
+          "rounded-lg border border-outline-variant/20 bg-white",
           fullScreen ? "p-4 md:p-5" : "p-5",
         ].join(" ")}
       >
@@ -506,7 +506,7 @@ export default function CheckTaskList({
         <form
           onSubmit={handleAddTask}
           className={[
-            "mt-5 grid gap-3 border border-outline-variant/20 bg-surface-container-low p-4",
+            "mt-5 grid gap-3 rounded-lg border border-outline-variant/20 bg-surface-container-low p-4",
             fullScreen
               ? "md:grid-cols-2 xl:grid-cols-[minmax(0,1.7fr)_0.85fr_0.8fr_1fr_0.95fr_auto]"
               : "lg:grid-cols-[1.45fr_0.8fr_0.8fr_1fr_0.9fr_auto]",
@@ -518,7 +518,7 @@ export default function CheckTaskList({
             value={newTitle}
             onChange={(event) => setNewTitle(event.target.value)}
             placeholder="Review employer contact details"
-            className="min-w-0 border border-outline-variant bg-white px-4 py-3 text-sm text-on-surface placeholder:text-outline focus:border-primary focus:outline-none disabled:cursor-not-allowed"
+            className="min-w-0 rounded-md border border-outline-variant bg-white px-4 py-3 text-sm text-on-surface placeholder:text-outline focus:border-on-surface focus:outline-none disabled:cursor-not-allowed"
             disabled={isPending}
           />
           <select
@@ -526,7 +526,7 @@ export default function CheckTaskList({
             onChange={(event) =>
               setNewPriority(event.target.value as TaskPriority)
             }
-            className="border border-outline-variant bg-white px-4 py-3 text-sm text-on-surface focus:border-primary focus:outline-none disabled:cursor-not-allowed"
+            className="rounded-md border border-outline-variant bg-white px-4 py-3 text-sm text-on-surface focus:border-on-surface focus:outline-none disabled:cursor-not-allowed"
             disabled={isPending}
           >
             {PRIORITY_OPTIONS.map((priority) => (
@@ -542,13 +542,13 @@ export default function CheckTaskList({
             value={newPublicStepNumber}
             onChange={(event) => setNewPublicStepNumber(event.target.value)}
             placeholder="Step #"
-            className="border border-outline-variant bg-white px-4 py-3 text-sm text-on-surface placeholder:text-outline focus:border-primary focus:outline-none disabled:cursor-not-allowed"
+            className="rounded-md border border-outline-variant bg-white px-4 py-3 text-sm text-on-surface placeholder:text-outline focus:border-on-surface focus:outline-none disabled:cursor-not-allowed"
             disabled={isPending}
           />
           <select
             value={newAssigneeId}
             onChange={(event) => setNewAssigneeId(event.target.value)}
-            className="border border-outline-variant bg-white px-4 py-3 text-sm text-on-surface focus:border-primary focus:outline-none disabled:cursor-not-allowed"
+            className="rounded-md border border-outline-variant bg-white px-4 py-3 text-sm text-on-surface focus:border-on-surface focus:outline-none disabled:cursor-not-allowed"
             disabled={isPending}
           >
             <option value="">Unassigned</option>
@@ -562,13 +562,13 @@ export default function CheckTaskList({
             type="date"
             value={newDueDate}
             onChange={(event) => setNewDueDate(event.target.value)}
-            className="border border-outline-variant bg-white px-4 py-3 text-sm text-on-surface focus:border-primary focus:outline-none disabled:cursor-not-allowed"
+            className="rounded-md border border-outline-variant bg-white px-4 py-3 text-sm text-on-surface focus:border-on-surface focus:outline-none disabled:cursor-not-allowed"
             disabled={isPending}
           />
           <button
             type="submit"
             disabled={isPending || !newTitle.trim()}
-            className="inline-flex items-center justify-center border border-[#f0ca52] bg-primary px-5 py-3 text-[11px] font-bold uppercase tracking-[0.18em] text-on-primary transition hover:bg-primary-container hover:text-on-primary-container disabled:opacity-40"
+            className="inline-flex items-center justify-center rounded-md border border-on-surface bg-on-surface px-5 py-3 text-[11px] font-bold uppercase tracking-[0.18em] text-white transition hover:bg-on-surface/85 disabled:opacity-40"
           >
             Create Task
           </button>
@@ -583,7 +583,7 @@ export default function CheckTaskList({
 
       <section
         className={[
-          "select-none border border-outline-variant/20 bg-surface-container-low/50",
+          "select-none rounded-lg border border-outline-variant/20 bg-surface-container-low/50",
           fullScreen ? "p-3 md:p-4" : "p-4",
         ].join(" ")}
       >
@@ -593,7 +593,7 @@ export default function CheckTaskList({
               key={column.value}
               onDragOver={(event) => handleDragOver(event, column.value, null)}
               onDrop={(event) => handleDrop(event, column.value, null)}
-              className={`flex min-h-[calc(100vh-24rem)] w-[88vw] shrink-0 snap-start flex-col border p-3 sm:w-[22rem] xl:w-[19rem] ${column.tone}`}
+              className={`flex min-h-[calc(100vh-24rem)] w-[88vw] shrink-0 snap-start flex-col rounded-lg border p-3 sm:w-[22rem] xl:w-[19rem] ${column.tone}`}
             >
               <div className="mb-3 flex items-center justify-between gap-3 bg-white px-4 py-3">
                 <div className="flex items-center gap-3">
@@ -609,14 +609,14 @@ export default function CheckTaskList({
                     </p>
                   </div>
                 </div>
-                <span className="border border-outline-variant/30 bg-surface-container-low px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.18em] text-outline">
+                <span className="rounded-md border border-outline-variant/30 bg-surface-container-low px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.18em] text-outline">
                   {column.tasks.length}
                 </span>
               </div>
 
               <div className="flex flex-1 flex-col gap-3">
                 {column.tasks.length === 0 ? (
-                  <div className="flex flex-1 items-center justify-center border border-dashed border-outline-variant/30 bg-white/70 px-4 py-6 text-center text-sm text-outline">
+                  <div className="flex flex-1 items-center justify-center rounded-lg border border-dashed border-outline-variant/30 bg-white/70 px-4 py-6 text-center text-sm text-outline">
                     Drop a task here
                   </div>
                 ) : (
@@ -636,7 +636,7 @@ export default function CheckTaskList({
                           handleDrop(event, column.value, task.id)
                         }
                         className={[
-                          "cursor-grab select-none border border-outline-variant/20 bg-white p-4 transition",
+                          "cursor-grab select-none rounded-lg border border-outline-variant/20 bg-white p-4 transition",
                           "hover:-translate-y-0.5 hover:shadow-[0_18px_40px_rgba(15,23,42,0.12)]",
                           "touch-pan-x",
                           isDragging ? "opacity-45" : "opacity-100",
@@ -700,7 +700,7 @@ export default function CheckTaskList({
                             <button
                               type="button"
                               onClick={() => setEditingTaskId(task.id)}
-                              className="inline-flex h-8 w-8 items-center justify-center border border-outline-variant/30 bg-white text-outline transition hover:border-primary hover:text-on-surface"
+                              className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-outline-variant/30 bg-white text-outline transition hover:border-on-surface hover:text-on-surface"
                             >
                               <Pencil className="h-3.5 w-3.5" />
                             </button>
@@ -770,7 +770,7 @@ export default function CheckTaskList({
                     onChange={(event) =>
                       updateDraft(editingTask.id, "title", event.target.value)
                     }
-                    className="w-full border border-outline-variant bg-white px-4 py-3 text-sm text-on-surface outline-none transition-colors focus:border-primary disabled:cursor-not-allowed disabled:bg-surface-container-low"
+                    className="w-full rounded-md border border-outline-variant bg-white px-4 py-3 text-sm text-on-surface outline-none transition-colors focus:border-on-surface disabled:cursor-not-allowed disabled:bg-surface-container-low"
                   />
                 </div>
 
@@ -792,7 +792,7 @@ export default function CheckTaskList({
                         event.target.value,
                       )
                     }
-                    className="w-full border border-outline-variant bg-white px-4 py-3 text-sm text-on-surface outline-none transition-colors focus:border-primary disabled:cursor-not-allowed disabled:bg-surface-container-low"
+                    className="w-full rounded-md border border-outline-variant bg-white px-4 py-3 text-sm text-on-surface outline-none transition-colors focus:border-on-surface disabled:cursor-not-allowed disabled:bg-surface-container-low"
                   />
                 </div>
 
@@ -810,7 +810,7 @@ export default function CheckTaskList({
                     onChange={(event) =>
                       updateDraft(editingTask.id, "notes", event.target.value)
                     }
-                    className="w-full border border-outline-variant bg-white px-4 py-3 text-sm text-on-surface outline-none transition-colors focus:border-primary disabled:cursor-not-allowed disabled:bg-surface-container-low"
+                    className="w-full rounded-md border border-outline-variant bg-white px-4 py-3 text-sm text-on-surface outline-none transition-colors focus:border-on-surface disabled:cursor-not-allowed disabled:bg-surface-container-low"
                   />
                 </div>
 
@@ -832,7 +832,7 @@ export default function CheckTaskList({
                           event.target.value,
                         )
                       }
-                      className="w-full border border-outline-variant bg-white px-4 py-3 text-sm text-on-surface outline-none transition-colors focus:border-primary disabled:cursor-not-allowed disabled:bg-surface-container-low"
+                      className="w-full rounded-md border border-outline-variant bg-white px-4 py-3 text-sm text-on-surface outline-none transition-colors focus:border-on-surface disabled:cursor-not-allowed disabled:bg-surface-container-low"
                     >
                       <option value="">Unassigned</option>
                       {editingAssigneeOptions.map((member) => (
@@ -865,7 +865,7 @@ export default function CheckTaskList({
                         )
                       }
                       placeholder="Optional"
-                      className="w-full border border-outline-variant bg-white px-4 py-3 text-sm text-on-surface outline-none transition-colors focus:border-primary disabled:cursor-not-allowed disabled:bg-surface-container-low"
+                      className="w-full rounded-md border border-outline-variant bg-white px-4 py-3 text-sm text-on-surface outline-none transition-colors focus:border-on-surface disabled:cursor-not-allowed disabled:bg-surface-container-low"
                     />
                   </div>
 
@@ -886,7 +886,7 @@ export default function CheckTaskList({
                           event.target.value,
                         )
                       }
-                      className="w-full border border-outline-variant bg-white px-4 py-3 text-sm text-on-surface outline-none transition-colors focus:border-primary disabled:cursor-not-allowed disabled:bg-surface-container-low"
+                      className="w-full rounded-md border border-outline-variant bg-white px-4 py-3 text-sm text-on-surface outline-none transition-colors focus:border-on-surface disabled:cursor-not-allowed disabled:bg-surface-container-low"
                     >
                       {PRIORITY_OPTIONS.map((priority) => (
                         <option key={priority} value={priority}>
@@ -916,7 +916,7 @@ export default function CheckTaskList({
                           event.target.value,
                         )
                       }
-                      className="w-full border border-outline-variant bg-white px-4 py-3 text-sm text-on-surface outline-none transition-colors focus:border-primary disabled:cursor-not-allowed disabled:bg-surface-container-low"
+                      className="w-full rounded-md border border-outline-variant bg-white px-4 py-3 text-sm text-on-surface outline-none transition-colors focus:border-on-surface disabled:cursor-not-allowed disabled:bg-surface-container-low"
                     />
                   </div>
                 </div>
@@ -929,7 +929,7 @@ export default function CheckTaskList({
               type="button"
               onClick={() => setEditingTaskId(null)}
               disabled={isPending}
-              className="border border-outline-variant/30 bg-white px-5 py-2.5 text-xs font-bold uppercase tracking-[0.18em] text-on-surface transition hover:border-primary disabled:opacity-40"
+              className="rounded-md border border-outline-variant/30 bg-white px-5 py-2.5 text-xs font-bold uppercase tracking-[0.18em] text-on-surface transition hover:border-on-surface disabled:opacity-40"
             >
               Cancel
             </button>
@@ -937,7 +937,7 @@ export default function CheckTaskList({
               type="button"
               onClick={() => editingTask && handleSave(editingTask.id)}
               disabled={isPending || !editingDraft?.title.trim()}
-              className="border border-[#f0ca52] bg-primary px-5 py-2.5 text-xs font-bold uppercase tracking-[0.18em] text-on-primary transition hover:bg-primary-container hover:text-on-primary-container disabled:opacity-40"
+              className="rounded-md border border-on-surface bg-on-surface px-5 py-2.5 text-xs font-bold uppercase tracking-[0.18em] text-white transition hover:bg-on-surface/85 disabled:opacity-40"
             >
               {isPending ? "Saving..." : "Save Task"}
             </button>

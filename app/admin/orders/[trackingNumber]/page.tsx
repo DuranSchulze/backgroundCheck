@@ -89,7 +89,7 @@ export default async function OrderDetailPage({
           </h1>
           <ul className="mt-4 flex flex-wrap gap-x-5 gap-y-2 text-sm">
             <li className="flex items-center gap-2 text-on-surface-variant">
-              <span className="h-1.5 w-1.5 shrink-0 bg-primary" />
+              <span className="h-1.5 w-1.5 shrink-0 bg-on-surface" />
               <span className="text-outline">Status</span>
               <span className="font-semibold text-on-surface">
                 {detail.progress
@@ -98,21 +98,21 @@ export default async function OrderDetailPage({
               </span>
             </li>
             <li className="flex items-center gap-2 text-on-surface-variant">
-              <span className="h-1.5 w-1.5 shrink-0 bg-primary" />
+              <span className="h-1.5 w-1.5 shrink-0 bg-on-surface" />
               <span className="text-outline">Checks</span>
               <span className="font-semibold text-on-surface">
                 {detail.checks.length}
               </span>
             </li>
             <li className="flex items-center gap-2 text-on-surface-variant">
-              <span className="h-1.5 w-1.5 shrink-0 bg-primary" />
+              <span className="h-1.5 w-1.5 shrink-0 bg-on-surface" />
               <span className="text-outline">Requestor</span>
               <span className="font-semibold text-on-surface">
                 {detail.order.submitterEmail || "Not provided"}
               </span>
             </li>
             <li className="flex items-center gap-2 text-on-surface-variant">
-              <span className="h-1.5 w-1.5 shrink-0 bg-primary" />
+              <span className="h-1.5 w-1.5 shrink-0 bg-on-surface" />
               <span className="text-outline">Subject</span>
               <span className="font-semibold text-on-surface">
                 {detail.order.subjectEmail || "Not provided"}
@@ -124,7 +124,7 @@ export default async function OrderDetailPage({
 
       <div className="grid gap-6 xl:grid-cols-[0.95fr_1.05fr]">
         <section>
-          <div className="border border-outline-variant/20 bg-white p-6">
+          <div className="rounded-lg border border-outline-variant/20 bg-white p-6">
             <h2 className="font-headline text-lg font-bold text-on-surface md:text-xl">
               Service Checks
             </h2>
@@ -140,7 +140,7 @@ export default async function OrderDetailPage({
           </div>
         </section>
 
-        <section className="border border-outline-variant/20 bg-white p-6">
+        <section className="rounded-lg border border-outline-variant/20 bg-white p-6">
           <div className="flex items-start justify-between gap-4">
             <div>
               <h2 className="font-headline text-lg font-bold text-on-surface md:text-xl">
@@ -154,7 +154,7 @@ export default async function OrderDetailPage({
           </div>
 
           <div className="mt-5 grid gap-3 sm:grid-cols-2">
-            <div className="border border-outline-variant/20 bg-surface-container-low p-4">
+            <div className="rounded-lg border border-outline-variant/20 bg-surface-container-low p-4">
               <div className="text-[11px] font-bold uppercase tracking-[0.2em] text-outline">
                 Summary
               </div>
@@ -163,7 +163,7 @@ export default async function OrderDetailPage({
               </p>
             </div>
 
-            <div className="border border-outline-variant/20 bg-surface-container-low p-4">
+            <div className="rounded-lg border border-outline-variant/20 bg-surface-container-low p-4">
               <div className="text-[11px] font-bold uppercase tracking-[0.2em] text-outline">
                 ETA
               </div>
@@ -172,7 +172,7 @@ export default async function OrderDetailPage({
               </p>
             </div>
 
-            <div className="border border-outline-variant/20 bg-surface-container-low p-4">
+            <div className="rounded-lg border border-outline-variant/20 bg-surface-container-low p-4">
               <div className="text-[11px] font-bold uppercase tracking-[0.2em] text-outline">
                 Admin Notes
               </div>
@@ -181,7 +181,7 @@ export default async function OrderDetailPage({
               </p>
             </div>
 
-            <div className="border border-outline-variant/20 bg-surface-container-low p-4">
+            <div className="rounded-lg border border-outline-variant/20 bg-surface-container-low p-4">
               <div className="text-[11px] font-bold uppercase tracking-[0.2em] text-outline">
                 Last Updated
               </div>
@@ -201,7 +201,7 @@ export default async function OrderDetailPage({
               {detail.checks.map((check) => (
                 <div
                   key={check.id}
-                  className="flex items-center justify-between gap-3 border border-outline-variant/20 bg-white px-4 py-3"
+                  className="flex items-center justify-between gap-3 rounded-lg border border-outline-variant/20 bg-white px-4 py-3"
                 >
                   <p className="text-sm font-semibold text-on-surface">
                     {check.serviceLabel}

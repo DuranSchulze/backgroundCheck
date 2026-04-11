@@ -11,8 +11,8 @@ export default function CircularProgress({
   percent,
   size = 160,
   strokeWidth = 6,
-  trackColor = "#f4e7bb",
-  progressColor = "var(--color-primary)",
+  trackColor = "#e5e7eb",
+  progressColor = "var(--color-on-surface)",
   sublabel,
 }: CircularProgressProps) {
   const radius = (size - strokeWidth) / 2;
@@ -45,7 +45,7 @@ export default function CircularProgress({
         />
       </svg>
       <div className="absolute inset-0 flex flex-col items-center justify-center rounded-full bg-white/75 rotate-0">
-        <span className="text-4xl font-headline font-extrabold text-primary leading-none">
+        <span className="font-headline text-4xl font-extrabold leading-none text-on-surface">
           {percent}%
         </span>
         {sublabel && (

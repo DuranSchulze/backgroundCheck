@@ -70,7 +70,7 @@ export default async function CheckBoardPage({ params }: CheckBoardPageProps) {
       maxWidthClassName="max-w-[1800px]"
       hideSidebar
     >
-      <div className="border border-outline-variant/20 bg-white p-5 md:p-6">
+      <div className="rounded-lg border border-outline-variant/20 bg-white p-5 md:p-6">
         <div className="flex flex-col gap-5 xl:flex-row xl:items-start xl:justify-between">
           <div>
             <div className="flex flex-wrap items-center gap-3 text-sm">
@@ -111,7 +111,7 @@ export default async function CheckBoardPage({ params }: CheckBoardPageProps) {
           </div>
 
           <div className="grid gap-3 sm:grid-cols-3 xl:min-w-[420px]">
-            <div className="border border-outline-variant/20 bg-surface-container-low px-4 py-4">
+            <div className="rounded-lg border border-outline-variant/20 bg-surface-container-low px-4 py-4">
               <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-outline">
                 Total Tasks
               </p>
@@ -119,7 +119,7 @@ export default async function CheckBoardPage({ params }: CheckBoardPageProps) {
                 {check.tasks.length}
               </p>
             </div>
-            <div className="border border-outline-variant/20 bg-surface-container-low px-4 py-4">
+            <div className="rounded-lg border border-outline-variant/20 bg-surface-container-low px-4 py-4">
               <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-outline">
                 Active Work
               </p>
@@ -127,7 +127,7 @@ export default async function CheckBoardPage({ params }: CheckBoardPageProps) {
                 {activeCount}
               </p>
             </div>
-            <div className="border border-outline-variant/20 bg-surface-container-low px-4 py-4">
+            <div className="rounded-lg border border-outline-variant/20 bg-surface-container-low px-4 py-4">
               <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-outline">
                 Public Steps
               </p>

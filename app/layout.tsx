@@ -29,7 +29,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className={cn(inter.variable, manrope.variable)}>
-      <body className="min-h-screen bg-surface text-on-surface antialiased selection:bg-primary-fixed selection:text-primary">
+      <body className="min-h-screen bg-surface text-on-surface antialiased selection:bg-slate-200 selection:text-slate-950">
         <TooltipProvider>
           {children}
           <GooeyToaster />

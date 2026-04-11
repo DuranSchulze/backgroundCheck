@@ -35,7 +35,7 @@ export default function Input({
         <input
           id={inputId}
           className={[
-            "w-full rounded-xl border border-[color:var(--color-outline-variant)] bg-white py-2.5 text-sm text-[color:var(--color-on-surface)] placeholder:text-[color:var(--color-outline)] focus:border-primary focus:outline-none focus:ring-2 focus:ring-[color:var(--color-primary-fixed)] transition",
+            "w-full rounded-md border border-[color:var(--color-outline-variant)] bg-white py-2.5 text-sm text-[color:var(--color-on-surface)] placeholder:text-[color:var(--color-outline)] transition focus:border-[color:var(--color-on-surface)] focus:outline-none focus:ring-2 focus:ring-slate-200",
             leftIcon ? "pl-9 pr-3" : "px-3",
             error
               ? "border-red-400 focus:border-red-400 focus:ring-red-100"

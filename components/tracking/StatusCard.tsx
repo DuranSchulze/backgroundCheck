@@ -15,7 +15,7 @@ export default function StatusCard({
   expectedCompletion,
 }: StatusCardProps) {
   return (
-    <div className="border border-outline-variant/30 bg-white p-5 sm:p-6">
+    <div className="rounded-lg border border-outline-variant/30 bg-white p-5 sm:p-6">
       <div className="flex flex-col items-center text-center">
         <div className="mb-6">
           <CircularProgress percent={percent} sublabel="Completed" />
@@ -28,7 +28,7 @@ export default function StatusCard({
           </h2>
           <p className="text-sm leading-6 text-on-surface-variant font-medium">
             Expected Completion:{" "}
-            <span className="font-bold text-primary">{expectedCompletion}</span>
+            <span className="font-bold text-on-surface">{expectedCompletion}</span>
           </p>
         </div>
       </div>

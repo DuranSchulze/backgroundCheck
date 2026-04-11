@@ -201,7 +201,7 @@ export default function OrderTaskBoard({
   }
 
   return (
-    <section className="border border-outline-variant/20 bg-white p-6">
+    <section className="rounded-lg border border-outline-variant/20 bg-white p-6">
       <div className="flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
         <div>
           <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-outline">
@@ -221,12 +221,12 @@ export default function OrderTaskBoard({
 
       <form
         onSubmit={handleCreateTask}
-        className="mt-5 grid gap-3 border border-outline-variant/20 bg-surface-container-low p-4 md:grid-cols-[1.1fr_1.2fr_0.8fr_0.9fr_0.9fr_auto]"
+        className="mt-5 grid gap-3 rounded-lg border border-outline-variant/20 bg-surface-container-low p-4 md:grid-cols-[1.1fr_1.2fr_0.8fr_0.9fr_0.9fr_auto]"
       >
         <select
           value={newCheckId}
           onChange={(event) => setNewCheckId(event.target.value)}
-          className="border border-outline-variant bg-white px-4 py-2.5 text-sm text-on-surface focus:border-primary focus:outline-none"
+          className="rounded-md border border-outline-variant bg-white px-4 py-2.5 text-sm text-on-surface focus:border-on-surface focus:outline-none"
         >
           <option value="">Select service</option>
           {checks.map((check) => (
@@ -240,14 +240,14 @@ export default function OrderTaskBoard({
           value={newTitle}
           onChange={(event) => setNewTitle(event.target.value)}
           placeholder="Add a task title"
-          className="border border-outline-variant bg-white px-4 py-2.5 text-sm text-on-surface placeholder:text-outline focus:border-primary focus:outline-none"
+          className="rounded-md border border-outline-variant bg-white px-4 py-2.5 text-sm text-on-surface placeholder:text-outline focus:border-on-surface focus:outline-none"
         />
         <select
           value={newPriority}
           onChange={(event) =>
             setNewPriority(event.target.value as TaskPriority)
           }
-          className="border border-outline-variant bg-white px-4 py-2.5 text-sm text-on-surface focus:border-primary focus:outline-none"
+          className="rounded-md border border-outline-variant bg-white px-4 py-2.5 text-sm text-on-surface focus:border-on-surface focus:outline-none"
           disabled={isPending}
         >
           {PRIORITY_OPTIONS.map((priority) => (
@@ -259,7 +259,7 @@ export default function OrderTaskBoard({
         <select
           value={newAssigneeId}
           onChange={(event) => setNewAssigneeId(event.target.value)}
-          className="border border-outline-variant bg-white px-4 py-2.5 text-sm text-on-surface focus:border-primary focus:outline-none"
+          className="rounded-md border border-outline-variant bg-white px-4 py-2.5 text-sm text-on-surface focus:border-on-surface focus:outline-none"
           disabled={isPending}
         >
           <option value="">Unassigned</option>
@@ -273,12 +273,12 @@ export default function OrderTaskBoard({
           type="date"
           value={newDueDate}
           onChange={(event) => setNewDueDate(event.target.value)}
-          className="border border-outline-variant bg-white px-4 py-2.5 text-sm text-on-surface focus:border-primary focus:outline-none"
+          className="rounded-md border border-outline-variant bg-white px-4 py-2.5 text-sm text-on-surface focus:border-on-surface focus:outline-none"
         />
         <button
           type="submit"
           disabled={isPending || !newCheckId || !newTitle.trim()}
-          className="border border-[#f0ca52] bg-primary px-5 py-2.5 text-xs font-bold uppercase tracking-[0.18em] text-on-primary transition hover:bg-primary-container hover:text-on-primary-container disabled:opacity-40"
+          className="rounded-md border border-on-surface bg-on-surface px-5 py-2.5 text-xs font-bold uppercase tracking-[0.18em] text-white transition hover:bg-on-surface/85 disabled:opacity-40"
         >
           Add Task
         </button>
@@ -299,7 +299,7 @@ export default function OrderTaskBoard({
           return (
             <div
               key={column.value}
-              className="border border-outline-variant/20 bg-surface-container-low p-4"
+              className="rounded-lg border border-outline-variant/20 bg-surface-container-low p-4"
             >
               <div className="mb-4 flex items-center justify-between gap-3">
                 <h3 className="text-sm font-bold uppercase tracking-[0.18em] text-on-surface">
@@ -336,14 +336,14 @@ export default function OrderTaskBoard({
                     return (
                       <div
                         key={task.id}
-                        className="border border-outline-variant/20 bg-white p-3"
+                        className="rounded-lg border border-outline-variant/20 bg-white p-3"
                       >
                         <div className="flex items-start justify-between gap-3">
                           <div className="min-w-0">
                             <p className="text-sm font-semibold text-on-surface">
                               {task.title}
                             </p>
-                            <p className="mt-1 text-[11px] font-bold uppercase tracking-[0.16em] text-primary">
+                            <p className="mt-1 text-[11px] font-bold uppercase tracking-[0.16em] text-on-surface">
                               {task.serviceLabel}
                             </p>
                           </div>
@@ -352,7 +352,7 @@ export default function OrderTaskBoard({
                             onClick={() =>
                               setExpandedId(isExpanded ? null : task.id)
                             }
-                            className="border border-outline-variant/30 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.16em] text-outline transition hover:border-primary hover:text-on-surface"
+                            className="rounded-md border border-outline-variant/30 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.16em] text-outline transition hover:border-on-surface hover:text-on-surface"
                           >
                             {isExpanded ? "Close" : "Edit"}
                           </button>
@@ -388,7 +388,7 @@ export default function OrderTaskBoard({
                             )
                           }
                           disabled={isPending}
-                          className="mt-3 w-full border border-outline-variant/30 bg-surface-container-low px-3 py-2 text-xs font-bold uppercase tracking-[0.16em] text-on-surface focus:border-primary focus:outline-none"
+                          className="mt-3 w-full rounded-md border border-outline-variant/30 bg-surface-container-low px-3 py-2 text-xs font-bold uppercase tracking-[0.16em] text-on-surface focus:border-on-surface focus:outline-none"
                         >
                           {STATUS_COLUMNS.map((status) => (
                             <option key={status.value} value={status.value}>
@@ -409,7 +409,7 @@ export default function OrderTaskBoard({
                                   event.target.value,
                                 )
                               }
-                              className="w-full border border-outline-variant bg-white px-3 py-2 text-sm text-on-surface focus:border-primary focus:outline-none"
+                              className="w-full rounded-md border border-outline-variant bg-white px-3 py-2 text-sm text-on-surface focus:border-on-surface focus:outline-none"
                             />
                             <textarea
                               rows={3}
@@ -422,7 +422,7 @@ export default function OrderTaskBoard({
                                 )
                               }
                               placeholder="Task description"
-                              className="w-full border border-outline-variant bg-white px-3 py-2 text-sm text-on-surface placeholder:text-outline focus:border-primary focus:outline-none"
+                              className="w-full rounded-md border border-outline-variant bg-white px-3 py-2 text-sm text-on-surface placeholder:text-outline focus:border-on-surface focus:outline-none"
                             />
                             <textarea
                               rows={3}
@@ -435,7 +435,7 @@ export default function OrderTaskBoard({
                                 )
                               }
                               placeholder="Working notes"
-                              className="w-full border border-outline-variant bg-white px-3 py-2 text-sm text-on-surface placeholder:text-outline focus:border-primary focus:outline-none"
+                              className="w-full rounded-md border border-outline-variant bg-white px-3 py-2 text-sm text-on-surface placeholder:text-outline focus:border-on-surface focus:outline-none"
                             />
                             <div className="grid gap-3">
                               <select
@@ -447,7 +447,7 @@ export default function OrderTaskBoard({
                                     event.target.value,
                                   )
                                 }
-                                className="border border-outline-variant bg-white px-3 py-2 text-sm text-on-surface focus:border-primary focus:outline-none"
+                                className="rounded-md border border-outline-variant bg-white px-3 py-2 text-sm text-on-surface focus:border-on-surface focus:outline-none"
                               >
                                 <option value="">Unassigned</option>
                                 {assigneeOptions.map((member) => (
@@ -466,7 +466,7 @@ export default function OrderTaskBoard({
                                     event.target.value,
                                   )
                                 }
-                                className="border border-outline-variant bg-white px-3 py-2 text-sm text-on-surface focus:border-primary focus:outline-none"
+                                className="rounded-md border border-outline-variant bg-white px-3 py-2 text-sm text-on-surface focus:border-on-surface focus:outline-none"
                               >
                                 {PRIORITY_OPTIONS.map((priority) => (
                                   <option key={priority} value={priority}>
@@ -484,14 +484,14 @@ export default function OrderTaskBoard({
                                     event.target.value,
                                   )
                                 }
-                                className="border border-outline-variant bg-white px-3 py-2 text-sm text-on-surface focus:border-primary focus:outline-none"
+                                className="rounded-md border border-outline-variant bg-white px-3 py-2 text-sm text-on-surface focus:border-on-surface focus:outline-none"
                               />
                             </div>
                             <button
                               type="button"
                               onClick={() => handleSave(task)}
                               disabled={isPending}
-                              className="w-full border border-[#f0ca52] bg-primary px-4 py-2 text-xs font-bold uppercase tracking-[0.18em] text-on-primary transition hover:bg-primary-container hover:text-on-primary-container disabled:opacity-50"
+                              className="w-full rounded-md border border-on-surface bg-on-surface px-4 py-2 text-xs font-bold uppercase tracking-[0.18em] text-white transition hover:bg-on-surface/85 disabled:opacity-50"
                             >
                               Save Task
                             </button>

@@ -99,7 +99,7 @@ export default async function CheckDetailPage({
         </div>
       </div>
 
-      <section className="border border-outline-variant/20 bg-white p-6 md:p-7">
+      <section className="rounded-lg border border-outline-variant/20 bg-white p-6 md:p-7">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
           <div>
             <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-outline">
@@ -115,14 +115,14 @@ export default async function CheckDetailPage({
           </div>
           <Link
             href={boardHref}
-            className="inline-flex items-center justify-center border border-[#f0ca52] bg-primary px-5 py-3 text-xs font-bold uppercase tracking-[0.18em] text-on-primary transition hover:bg-primary-container hover:text-on-primary-container"
+            className="inline-flex items-center justify-center rounded-md border border-on-surface bg-on-surface px-5 py-3 text-xs font-bold uppercase tracking-[0.18em] text-white transition hover:bg-on-surface/85"
           >
             Open Task Board
           </Link>
         </div>
 
         <div className="mt-5 grid gap-3 sm:grid-cols-3">
-          <div className="border border-outline-variant/20 bg-surface-container-low px-4 py-4">
+          <div className="rounded-lg border border-outline-variant/20 bg-surface-container-low px-4 py-4">
             <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-outline">
               Tasks
             </p>
@@ -130,7 +130,7 @@ export default async function CheckDetailPage({
               {check.tasks.length}
             </p>
           </div>
-          <div className="border border-outline-variant/20 bg-surface-container-low px-4 py-4">
+          <div className="rounded-lg border border-outline-variant/20 bg-surface-container-low px-4 py-4">
             <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-outline">
               Active Assignees
             </p>
@@ -138,7 +138,7 @@ export default async function CheckDetailPage({
               {activeStaffCount}
             </p>
           </div>
-          <div className="border border-outline-variant/20 bg-surface-container-low px-4 py-4">
+          <div className="rounded-lg border border-outline-variant/20 bg-surface-container-low px-4 py-4">
             <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-outline">
               Current Status
             </p>
@@ -152,7 +152,7 @@ export default async function CheckDetailPage({
         </div>
       </section>
 
-      <div className="border border-outline-variant/20 bg-white p-6 md:p-7">
+      <div className="rounded-lg border border-outline-variant/20 bg-white p-6 md:p-7">
         <ServiceCheckEditor
           checkId={check.id}
           serviceLabel={check.serviceLabel}

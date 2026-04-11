@@ -68,7 +68,7 @@ export default function AdminLoginPage() {
         {/* Left: Brand + info */}
         <div className="space-y-6">
           <div className="inline-flex items-center gap-2 border border-outline-variant/40 bg-surface-container-low px-3 py-1.5">
-            <ShieldCheck className="h-3.5 w-3.5 text-primary" />
+            <ShieldCheck className="h-3.5 w-3.5 text-on-surface" />
             <span className="text-[10px] font-bold uppercase tracking-[0.28em] text-outline">
               Protected Admin Access
             </span>
@@ -90,7 +90,7 @@ export default function AdminLoginPage() {
               "Monitor verification pipeline status",
             ].map((item) => (
               <div key={item} className="flex items-center gap-3">
-                <span className="h-1.5 w-1.5 shrink-0 bg-primary" />
+                <span className="h-1.5 w-1.5 shrink-0 bg-on-surface" />
                 <span className="text-sm text-on-surface-variant">{item}</span>
               </div>
             ))}
@@ -98,7 +98,7 @@ export default function AdminLoginPage() {
         </div>
 
         {/* Right: Login form */}
-        <div className="border border-outline-variant/30 bg-white p-8 shadow-[0_8px_32px_rgba(35,27,8,0.06)]">
+        <div className="rounded-lg border border-outline-variant/30 bg-white p-8 shadow-sm">
           <div className="mb-6 border-b border-outline-variant/20 pb-5">
             <p className="text-[10px] font-bold uppercase tracking-[0.28em] text-outline">
               Admin Sign In
@@ -129,7 +129,7 @@ export default function AdminLoginPage() {
                     id="username"
                     value={username}
                     onChange={(event) => setUsername(event.target.value)}
-                    className="w-full border border-outline-variant bg-white pl-11 pr-4 py-3 text-sm text-on-surface outline-none transition-colors focus:border-primary disabled:cursor-not-allowed disabled:bg-surface-container-low disabled:text-outline"
+                    className="w-full rounded-md border border-outline-variant bg-white py-3 pl-11 pr-4 text-sm text-on-surface outline-none transition-colors focus:border-on-surface disabled:cursor-not-allowed disabled:bg-surface-container-low disabled:text-outline"
                     autoComplete="username"
                     required
                   />
@@ -153,7 +153,7 @@ export default function AdminLoginPage() {
                     type={isPasswordVisible ? "text" : "password"}
                     value={password}
                     onChange={(event) => setPassword(event.target.value)}
-                    className="w-full border border-outline-variant bg-white pl-11 pr-12 py-3 text-sm text-on-surface outline-none transition-colors focus:border-primary disabled:cursor-not-allowed disabled:bg-surface-container-low disabled:text-outline"
+                    className="w-full rounded-md border border-outline-variant bg-white py-3 pl-11 pr-12 text-sm text-on-surface outline-none transition-colors focus:border-on-surface disabled:cursor-not-allowed disabled:bg-surface-container-low disabled:text-outline"
                     autoComplete="current-password"
                     required
                   />
@@ -187,7 +187,7 @@ export default function AdminLoginPage() {
             <button
               type="submit"
               disabled={isSubmitting}
-              className="flex w-full items-center justify-center gap-2.5 border border-[#f0ca52] bg-primary px-5 py-3 text-sm font-bold uppercase tracking-[0.18em] text-on-primary transition-colors hover:bg-primary-container hover:text-on-primary-container disabled:cursor-not-allowed disabled:opacity-60"
+              className="flex w-full items-center justify-center gap-2.5 rounded-md border border-on-surface bg-on-surface px-5 py-3 text-sm font-bold uppercase tracking-[0.18em] text-white transition-colors hover:bg-on-surface/85 disabled:cursor-not-allowed disabled:opacity-60"
             >
               <LogIn className="h-4 w-4" />
               {isSubmitting ? "Signing In..." : "Sign In"}

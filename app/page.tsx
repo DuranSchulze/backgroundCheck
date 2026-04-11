@@ -24,7 +24,7 @@ export default function Home() {
               priority
               className="h-auto w-[110px] sm:w-[130px]"
             />
-            <span className="hidden sm:inline-block text-[10px] font-bold uppercase tracking-[0.24em] text-primary border-l border-outline-variant/40 pl-3">
+            <span className="hidden border-l border-outline-variant/40 pl-3 text-[10px] font-bold uppercase tracking-[0.24em] text-outline sm:inline-block">
               Client Portal
             </span>
           </div>
@@ -33,10 +33,6 @@ export default function Home() {
 
       {/* Main content */}
       <main className="flex-grow flex flex-col items-center justify-center px-6 pt-28 pb-20 relative">
-        {/* Ambient glow blobs */}
-        <div className="pointer-events-none absolute bottom-32 -left-32 w-96 h-96 bg-primary/5 rounded-full blur-[100px] -z-10" />
-        <div className="pointer-events-none absolute top-32 -right-32 w-96 h-96 bg-primary/5 rounded-full blur-[100px] -z-10" />
-
         {/* Hero */}
         <div className="w-full max-w-2xl text-center mb-10">
           <p className="mb-4 text-[11px] font-bold uppercase tracking-[0.28em] text-outline">
@@ -52,14 +48,14 @@ export default function Home() {
         </div>
 
         {/* Search card */}
-        <div className="w-full max-w-xl bg-white shadow-[0_12px_32px_rgba(35,27,8,0.07)] border border-outline-variant/20 p-8 sm:p-10">
+        <div className="w-full max-w-xl rounded-lg border border-outline-variant/20 bg-white p-8 shadow-sm sm:p-10">
           <TrackingPortalDemo />
         </div>
 
         {/* Feature cards */}
         <div className="w-full max-w-5xl mt-20 grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div className="bg-surface-container-low p-8 flex flex-col gap-4 border border-outline-variant/10">
-            <ShieldCheck className="h-8 w-8 text-primary" />
+          <div className="flex flex-col gap-4 rounded-lg border border-outline-variant/20 bg-white p-8">
+            <ShieldCheck className="h-8 w-8 text-on-surface" />
             <h3 className="font-headline font-bold text-xl text-on-surface">
               Standard Protocol
             </h3>
@@ -69,8 +65,8 @@ export default function Home() {
               checks.
             </p>
           </div>
-          <div className="bg-surface-container-low p-8 flex flex-col gap-4 border border-outline-variant/10">
-            <Zap className="h-8 w-8 text-primary" />
+          <div className="flex flex-col gap-4 rounded-lg border border-outline-variant/20 bg-white p-8">
+            <Zap className="h-8 w-8 text-on-surface" />
             <h3 className="font-headline font-bold text-xl text-on-surface">
               Real-time Updates
             </h3>
@@ -79,8 +75,8 @@ export default function Home() {
               instantaneous status updates from our verification pipeline.
             </p>
           </div>
-          <div className="bg-surface-container-low p-8 flex flex-col gap-4 border border-outline-variant/10">
-            <Users className="h-8 w-8 text-primary" />
+          <div className="flex flex-col gap-4 rounded-lg border border-outline-variant/20 bg-white p-8">
+            <Users className="h-8 w-8 text-on-surface" />
             <h3 className="font-headline font-bold text-xl text-on-surface">
               Expert Review
             </h3>
@@ -100,19 +96,19 @@ export default function Home() {
           </p>
           <div className="flex gap-8">
             <a
-              className="text-xs tracking-wide uppercase text-outline hover:text-primary transition-colors"
+              className="text-xs uppercase tracking-wide text-outline transition-colors hover:text-on-surface"
               href="#"
             >
               Privacy Policy
             </a>
             <a
-              className="text-xs tracking-wide uppercase text-outline hover:text-primary transition-colors"
+              className="text-xs uppercase tracking-wide text-outline transition-colors hover:text-on-surface"
               href="#"
             >
               Terms of Service
             </a>
             <a
-              className="text-xs tracking-wide uppercase text-outline hover:text-primary transition-colors"
+              className="text-xs uppercase tracking-wide text-outline transition-colors hover:text-on-surface"
               href="#"
             >
               Support

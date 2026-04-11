@@ -9,7 +9,7 @@ export default function CheckBreakdown({ checks }: CheckBreakdownProps) {
 
   if (safeChecks.length === 0) {
     return (
-      <div className="border border-outline-variant/20 bg-white p-4">
+      <div className="rounded-lg border border-outline-variant/20 bg-white p-4">
         <p className="text-sm leading-6 text-on-surface-variant">
           No check breakdown is available for this order yet.
         </p>
@@ -18,9 +18,9 @@ export default function CheckBreakdown({ checks }: CheckBreakdownProps) {
   }
 
   return (
-    <div className="border border-outline-variant/20 bg-white p-4 sm:p-5">
+    <div className="rounded-lg border border-outline-variant/20 bg-white p-4 sm:p-5">
       <div className="mb-5 flex items-center gap-2">
-        <div className="rounded bg-primary-fixed px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-[0.22em] text-[color:var(--color-on-primary-fixed)]">
+        <div className="rounded-md border border-outline-variant/30 bg-white px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-[0.22em] text-outline">
           Checks
         </div>
       </div>
@@ -39,13 +39,13 @@ export default function CheckBreakdown({ checks }: CheckBreakdownProps) {
         {safeChecks.map((check) => (
           <section
             key={check.id}
-            className="border border-outline-variant/20 bg-surface-container-low p-4"
+            className="rounded-lg border border-outline-variant/20 bg-surface-container-low p-4"
           >
             <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
               <h4 className="font-headline text-lg font-bold text-on-surface">
                 {check.label}
               </h4>
-              <span className="shrink-0 rounded border border-outline-variant/30 bg-white px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-[0.18em] text-outline">
+              <span className="shrink-0 rounded-md border border-outline-variant/30 bg-white px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-[0.18em] text-outline">
                 Overall {check.overall}
               </span>
             </div>
@@ -55,12 +55,12 @@ export default function CheckBreakdown({ checks }: CheckBreakdownProps) {
                 check.tasks.map((task) => (
                   <div
                     key={task.id}
-                    className="border border-outline-variant/20 bg-white px-4 py-3"
+                    className="rounded-lg border border-outline-variant/20 bg-white px-4 py-3"
                   >
                     <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
                       <div className="min-w-0">
                         <p className="text-sm font-semibold text-on-surface">
-                          <span className="mr-2 inline-flex rounded bg-primary-fixed px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.16em] text-[color:var(--color-on-primary-fixed)]">
+                          <span className="mr-2 inline-flex rounded-md border border-outline-variant/30 bg-surface-container-low px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.16em] text-outline">
                             {task.label}
                           </span>
                           {task.title}
@@ -72,20 +72,20 @@ export default function CheckBreakdown({ checks }: CheckBreakdownProps) {
                           {task.remarks || "—"}
                         </p>
                       </div>
-                      <span className="shrink-0 rounded border border-outline-variant/30 bg-surface-container-low px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-[0.18em] text-outline">
+                      <span className="shrink-0 rounded-md border border-outline-variant/30 bg-surface-container-low px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-[0.18em] text-outline">
                         {task.status}
                       </span>
                     </div>
                   </div>
                 ))
               ) : (
-                <div className="border border-dashed border-outline-variant/30 bg-white px-4 py-4 text-sm leading-6 text-on-surface-variant">
+                <div className="rounded-lg border border-dashed border-outline-variant/30 bg-white px-4 py-4 text-sm leading-6 text-on-surface-variant">
                   No tasks have been added for this check yet.
                 </div>
               )}
             </div>
 
-            <div className="mt-4 border border-outline-variant/20 bg-white px-4 py-4">
+            <div className="mt-4 rounded-lg border border-outline-variant/20 bg-white px-4 py-4">
               <p className="text-sm font-semibold text-on-surface">
                 Overall: <span className="font-bold">{check.overall}</span>
               </p>

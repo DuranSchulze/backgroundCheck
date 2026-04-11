@@ -44,7 +44,7 @@ export default function AdminShell({
       <div className="min-h-screen bg-surface">
         <div className="px-4 py-4 md:px-6 md:py-6">
           <div className={`mx-auto space-y-8 ${maxWidthClassName}`}>
-            <div className="border border-outline-variant/30 bg-white p-5">
+            <div className="rounded-lg border border-outline-variant/30 bg-white p-5">
               <div className="flex flex-col gap-4">
                 <p className="text-[11px] font-bold uppercase tracking-[0.28em] text-outline">
                   {eyebrow}
@@ -75,7 +75,7 @@ export default function AdminShell({
         className="border-r border-outline-variant/20"
       >
         <SidebarHeader className="gap-3 p-4">
-          <div className="border border-outline-variant/30 bg-white px-4 py-4">
+          <div className="rounded-lg border border-outline-variant/30 bg-white px-4 py-4">
             <p className="text-[11px] font-bold uppercase tracking-[0.28em] text-outline">
               Operations Console
             </p>
@@ -98,7 +98,7 @@ export default function AdminShell({
           <form action={logout}>
             <button
               type="submit"
-              className="flex w-full items-center justify-center gap-2 border border-outline-variant/40 bg-surface-container-low px-5 py-2.5 text-xs font-bold uppercase tracking-[0.18em] text-on-surface transition-colors hover:border-primary hover:bg-primary hover:text-on-primary"
+              className="flex w-full items-center justify-center gap-2 rounded-md border border-outline-variant/40 bg-surface-container-low px-5 py-2.5 text-xs font-bold uppercase tracking-[0.18em] text-on-surface transition-colors hover:border-on-surface hover:bg-on-surface hover:text-white"
             >
               <LogOut className="h-3.5 w-3.5" />
               Logout
@@ -112,7 +112,7 @@ export default function AdminShell({
       <SidebarInset className="bg-surface">
         <div className="px-4 py-4 md:px-6 md:py-6">
           <div className={`mx-auto space-y-8 ${maxWidthClassName}`}>
-            <div className="border border-outline-variant/30 bg-white p-5">
+            <div className="rounded-lg border border-outline-variant/30 bg-white p-5">
               <div className="flex flex-col gap-4">
                 <div className="flex items-center gap-3">
                   <SidebarTrigger className="shrink-0 border border-outline-variant/30 bg-white hover:bg-surface-container-low" />
