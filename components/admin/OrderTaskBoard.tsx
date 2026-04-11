@@ -30,6 +30,7 @@ type DraftState = Record<
     title: string;
     description: string;
     notes: string;
+    fileUrl: string;
     assigneeId: string;
     priority: TaskPriority;
     dueDate: string;
@@ -78,6 +79,7 @@ export default function OrderTaskBoard({
   const [newPriority, setNewPriority] = useState<TaskPriority>("MEDIUM");
   const [newAssigneeId, setNewAssigneeId] = useState("");
   const [newDueDate, setNewDueDate] = useState("");
+  const [newFileUrl, setNewFileUrl] = useState("");
   const [drafts, setDrafts] = useState<DraftState>(
     Object.fromEntries(
       tasks.map((task) => [
@@ -86,6 +88,7 @@ export default function OrderTaskBoard({
           title: task.title,
           description: task.description ?? "",
           notes: task.notes ?? "",
+          fileUrl: task.fileUrl ?? "",
           assigneeId: task.assignee?.id ?? "",
           priority: task.priority,
           dueDate: toDateInputValue(task.dueDate),
@@ -114,6 +117,7 @@ export default function OrderTaskBoard({
         title: current[taskId]?.title ?? "",
         description: current[taskId]?.description ?? "",
         notes: current[taskId]?.notes ?? "",
+        fileUrl: current[taskId]?.fileUrl ?? "",
         assigneeId: current[taskId]?.assigneeId ?? "",
         priority: current[taskId]?.priority ?? "MEDIUM",
         dueDate: current[taskId]?.dueDate ?? "",
@@ -135,6 +139,7 @@ export default function OrderTaskBoard({
         priority: newPriority,
         assigneeId: newAssigneeId || null,
         dueDate: newDueDate || null,
+        fileUrl: newFileUrl,
       });
 
       if (result?.error) {
@@ -146,6 +151,7 @@ export default function OrderTaskBoard({
       setNewPriority("MEDIUM");
       setNewAssigneeId("");
       setNewDueDate("");
+      setNewFileUrl("");
       refresh();
     });
   }
@@ -189,6 +195,7 @@ export default function OrderTaskBoard({
           assigneeId: draft.assigneeId || null,
           priority: draft.priority,
           dueDate: draft.dueDate || null,
+          fileUrl: draft.fileUrl,
         },
       );
       if (result?.error) {
@@ -221,7 +228,7 @@ export default function OrderTaskBoard({
 
       <form
         onSubmit={handleCreateTask}
-        className="mt-5 grid gap-3 rounded-lg border border-outline-variant/20 bg-surface-container-low p-4 md:grid-cols-[1.1fr_1.2fr_0.8fr_0.9fr_0.9fr_auto]"
+        className="mt-5 grid gap-3 rounded-lg border border-outline-variant/20 bg-surface-container-low p-4 md:grid-cols-2 xl:grid-cols-[1fr_1.15fr_0.75fr_0.85fr_0.85fr_1fr_auto]"
       >
         <select
           value={newCheckId}
@@ -275,6 +282,13 @@ export default function OrderTaskBoard({
           onChange={(event) => setNewDueDate(event.target.value)}
           className="rounded-md border border-outline-variant bg-white px-4 py-2.5 text-sm text-on-surface focus:border-on-surface focus:outline-none"
         />
+        <input
+          type="url"
+          value={newFileUrl}
+          onChange={(event) => setNewFileUrl(event.target.value)}
+          placeholder="File link"
+          className="rounded-md border border-outline-variant bg-white px-4 py-2.5 text-sm text-on-surface placeholder:text-outline focus:border-on-surface focus:outline-none"
+        />
         <button
           type="submit"
           disabled={isPending || !newCheckId || !newTitle.trim()}
@@ -321,6 +335,7 @@ export default function OrderTaskBoard({
                       title: task.title,
                       description: task.description ?? "",
                       notes: task.notes ?? "",
+                      fileUrl: task.fileUrl ?? "",
                       assigneeId: task.assignee?.id ?? "",
                       priority: task.priority,
                       dueDate: toDateInputValue(task.dueDate),
@@ -377,6 +392,19 @@ export default function OrderTaskBoard({
                               {formatDateLabel(task.dueDate)}
                             </span>
                           </div>
+                          {task.fileUrl ? (
+                            <div className="flex items-center justify-between gap-2">
+                              <span>File</span>
+                              <a
+                                href={task.fileUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="font-semibold text-on-surface underline decoration-outline/40 underline-offset-4 transition hover:text-outline"
+                              >
+                                View file
+                              </a>
+                            </div>
+                          ) : null}
                         </div>
 
                         <select
@@ -435,6 +463,19 @@ export default function OrderTaskBoard({
                                 )
                               }
                               placeholder="Working notes"
+                              className="w-full rounded-md border border-outline-variant bg-white px-3 py-2 text-sm text-on-surface placeholder:text-outline focus:border-on-surface focus:outline-none"
+                            />
+                            <input
+                              type="url"
+                              value={draft.fileUrl}
+                              onChange={(event) =>
+                                updateDraft(
+                                  task.id,
+                                  "fileUrl",
+                                  event.target.value,
+                                )
+                              }
+                              placeholder="File link"
                               className="w-full rounded-md border border-outline-variant bg-white px-3 py-2 text-sm text-on-surface placeholder:text-outline focus:border-on-surface focus:outline-none"
                             />
                             <div className="grid gap-3">

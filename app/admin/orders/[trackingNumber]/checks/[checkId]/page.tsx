@@ -159,6 +159,7 @@ export default async function CheckDetailPage({
           initialStatus={check.status}
           initialNotes={check.notes}
           initialTimelineLabel={check.timelineLabel}
+          initialFileUrl={check.fileUrl}
           trackingNumber={trackingNumber}
           allCheckIds={allCheckIds}
           currentIndex={currentIndex}

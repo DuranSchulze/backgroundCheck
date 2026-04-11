@@ -31,7 +31,12 @@ export async function actionInitializeChecks(trackingNumber: string) {
 export async function actionUpdateServiceCheck(
   trackingNumber: string,
   checkId: string,
-  payload: { status?: string; notes?: string; timelineLabel?: string },
+  payload: {
+    status?: string;
+    notes?: string;
+    timelineLabel?: string;
+    fileUrl?: string | null;
+  },
 ) {
   try {
     await updateServiceCheck(trackingNumber, checkId, payload);
@@ -73,6 +78,7 @@ export async function actionCreateCheckTask(
     priority?: string;
     dueDate?: string | null;
     notes?: string;
+    fileUrl?: string | null;
     assigneeId?: string | null;
     publicStepNumber?: number | string | null;
   },
@@ -98,6 +104,7 @@ export async function actionUpdateCheckTask(
     description?: string;
     priority?: string;
     dueDate?: string | null;
+    fileUrl?: string | null;
     assigneeId?: string | null;
     publicStepNumber?: number | string | null;
   },

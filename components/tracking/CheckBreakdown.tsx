@@ -71,6 +71,16 @@ export default function CheckBreakdown({ checks }: CheckBreakdownProps) {
                           </span>{" "}
                           {task.remarks || "—"}
                         </p>
+                        {task.fileUrl ? (
+                          <a
+                            href={task.fileUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="mt-3 inline-flex text-sm font-semibold text-on-surface underline decoration-outline/40 underline-offset-4 transition hover:text-outline"
+                          >
+                            View file
+                          </a>
+                        ) : null}
                       </div>
                       <span className="shrink-0 rounded-md border border-outline-variant/30 bg-surface-container-low px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-[0.18em] text-outline">
                         {task.status}
@@ -93,6 +103,16 @@ export default function CheckBreakdown({ checks }: CheckBreakdownProps) {
                 <span className="font-semibold text-on-surface">Remarks:</span>{" "}
                 {check.remarks || "—"}
               </p>
+              {check.fileUrl ? (
+                <a
+                  href={check.fileUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="mt-3 inline-flex text-sm font-semibold text-on-surface underline decoration-outline/40 underline-offset-4 transition hover:text-outline"
+                >
+                  View file
+                </a>
+              ) : null}
             </div>
           </section>
         ))}

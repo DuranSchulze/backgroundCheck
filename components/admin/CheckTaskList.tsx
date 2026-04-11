@@ -84,6 +84,7 @@ type TaskDraft = Record<
     title: string;
     description: string;
     notes: string;
+    fileUrl: string;
     assigneeId: string;
     priority: TaskPriority;
     publicStepNumber: string;
@@ -106,6 +107,7 @@ function createDraft(task: CheckTaskView) {
     title: task.title,
     description: task.description ?? "",
     notes: task.notes ?? "",
+    fileUrl: task.fileUrl ?? "",
     assigneeId: task.assignee?.id ?? "",
     priority: task.priority,
     publicStepNumber:
@@ -222,6 +224,7 @@ export default function CheckTaskList({
   const [newAssigneeId, setNewAssigneeId] = useState("");
   const [newPublicStepNumber, setNewPublicStepNumber] = useState("");
   const [newDueDate, setNewDueDate] = useState("");
+  const [newFileUrl, setNewFileUrl] = useState("");
   const [editingTaskId, setEditingTaskId] = useState<string | null>(null);
   const [dragState, setDragState] = useState<DragState>(null);
   const [isPending, startTransition] = useTransition();
@@ -274,6 +277,7 @@ export default function CheckTaskList({
         title: current[taskId]?.title ?? "",
         description: current[taskId]?.description ?? "",
         notes: current[taskId]?.notes ?? "",
+        fileUrl: current[taskId]?.fileUrl ?? "",
         assigneeId: current[taskId]?.assigneeId ?? "",
         priority: current[taskId]?.priority ?? "MEDIUM",
         publicStepNumber: current[taskId]?.publicStepNumber ?? "",
@@ -297,6 +301,7 @@ export default function CheckTaskList({
         assigneeId: newAssigneeId || null,
         publicStepNumber: newPublicStepNumber || null,
         dueDate: newDueDate || null,
+        fileUrl: newFileUrl,
       });
 
       if (result?.error) {
@@ -309,6 +314,7 @@ export default function CheckTaskList({
       setNewAssigneeId("");
       setNewPublicStepNumber("");
       setNewDueDate("");
+      setNewFileUrl("");
       inputRef.current?.focus();
       refresh();
     });
@@ -352,6 +358,7 @@ export default function CheckTaskList({
           priority: draft.priority,
           publicStepNumber: draft.publicStepNumber || null,
           dueDate: draft.dueDate || null,
+          fileUrl: draft.fileUrl,
         },
       );
 
@@ -508,8 +515,8 @@ export default function CheckTaskList({
           className={[
             "mt-5 grid gap-3 rounded-lg border border-outline-variant/20 bg-surface-container-low p-4",
             fullScreen
-              ? "md:grid-cols-2 xl:grid-cols-[minmax(0,1.7fr)_0.85fr_0.8fr_1fr_0.95fr_auto]"
-              : "lg:grid-cols-[1.45fr_0.8fr_0.8fr_1fr_0.9fr_auto]",
+              ? "md:grid-cols-2 xl:grid-cols-[minmax(0,1.7fr)_0.85fr_0.8fr_1fr_0.95fr_1.1fr_auto]"
+              : "lg:grid-cols-[1.35fr_0.75fr_0.75fr_0.9fr_0.85fr_1fr_auto]",
           ].join(" ")}
         >
           <input
@@ -563,6 +570,14 @@ export default function CheckTaskList({
             value={newDueDate}
             onChange={(event) => setNewDueDate(event.target.value)}
             className="rounded-md border border-outline-variant bg-white px-4 py-3 text-sm text-on-surface focus:border-on-surface focus:outline-none disabled:cursor-not-allowed"
+            disabled={isPending}
+          />
+          <input
+            type="url"
+            value={newFileUrl}
+            onChange={(event) => setNewFileUrl(event.target.value)}
+            placeholder="File link"
+            className="min-w-0 rounded-md border border-outline-variant bg-white px-4 py-3 text-sm text-on-surface placeholder:text-outline focus:border-on-surface focus:outline-none disabled:cursor-not-allowed"
             disabled={isPending}
           />
           <button
@@ -690,6 +705,16 @@ export default function CheckTaskList({
                               {task.notes}
                             </p>
                           ) : null}
+                          {task.fileUrl ? (
+                            <a
+                              href={task.fileUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="inline-flex text-[11px] font-semibold text-on-surface underline decoration-outline/40 underline-offset-4 transition hover:text-outline"
+                            >
+                              View file
+                            </a>
+                          ) : null}
                         </div>
 
                         <div className="mt-4 flex items-center justify-between gap-2 border-t border-slate-100 pt-3">
@@ -810,6 +835,25 @@ export default function CheckTaskList({
                     onChange={(event) =>
                       updateDraft(editingTask.id, "notes", event.target.value)
                     }
+                    className="w-full rounded-md border border-outline-variant bg-white px-4 py-3 text-sm text-on-surface outline-none transition-colors focus:border-on-surface disabled:cursor-not-allowed disabled:bg-surface-container-low"
+                  />
+                </div>
+
+                <div>
+                  <label
+                    htmlFor="task-file-url"
+                    className="mb-2 block text-[11px] font-bold uppercase tracking-[0.18em] text-outline"
+                  >
+                    File Link
+                  </label>
+                  <input
+                    id="task-file-url"
+                    type="url"
+                    value={editingDraft.fileUrl}
+                    onChange={(event) =>
+                      updateDraft(editingTask.id, "fileUrl", event.target.value)
+                    }
+                    placeholder="https://drive.google.com/..."
                     className="w-full rounded-md border border-outline-variant bg-white px-4 py-3 text-sm text-on-surface outline-none transition-colors focus:border-on-surface disabled:cursor-not-allowed disabled:bg-surface-container-low"
                   />
                 </div>

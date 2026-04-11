@@ -6,6 +6,7 @@ import {
   Activity,
   AlertCircle,
   ClipboardList,
+  Download,
   FileSearch,
   Fingerprint,
   ShieldCheck,
@@ -18,6 +19,10 @@ import StatusCard from "@/components/tracking/StatusCard";
 import TrackingSearch from "@/components/tracking/TrackingSearch";
 import VerificationPipeline from "@/components/tracking/VerificationPipeline";
 import { normalizeReferenceNumber } from "@/lib/tracking/normalize";
+import {
+  createTrackingReportPdf,
+  getTrackingReportFileName,
+} from "@/lib/tracking/report-pdf";
 import type { TrackingRecord } from "@/lib/tracking/types";
 
 const easeOut = [0.22, 1, 0.36, 1] as const;
@@ -75,6 +80,24 @@ export default function TrackingPortalDemo() {
     } finally {
       setIsLookupLoading(false);
     }
+  }
+
+  function handleDownloadReport() {
+    if (!record) {
+      return;
+    }
+
+    const pdfBytes = createTrackingReportPdf(record);
+    const blob = new Blob([pdfBytes], { type: "application/pdf" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+
+    link.href = url;
+    link.download = getTrackingReportFileName(record.referenceNumber);
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    URL.revokeObjectURL(url);
   }
 
   return (
@@ -137,16 +160,30 @@ export default function TrackingPortalDemo() {
                       </p>
                     </div>
 
-                    <m.button
-                      type="button"
-                      onClick={() => setIsResultsOpen(false)}
-                      className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-md border border-outline-variant/40 bg-white text-on-surface transition-colors hover:bg-surface-container-low"
-                      aria-label="Close tracking details"
-                      whileHover={{ rotate: 90 }}
-                      transition={{ duration: 0.2 }}
-                    >
-                      <X className="h-5 w-5" />
-                    </m.button>
+                    <div className="flex shrink-0 items-center gap-2">
+                      {record && !isLookupLoading ? (
+                        <button
+                          type="button"
+                          onClick={handleDownloadReport}
+                          className="inline-flex h-9 items-center gap-2 rounded-md border border-outline-variant/40 bg-white px-3 text-xs font-bold uppercase tracking-[0.14em] text-on-surface transition-colors hover:bg-surface-container-low"
+                        >
+                          <Download className="h-4 w-4" />
+                          <span className="hidden sm:inline">Export Report</span>
+                          <span className="sm:hidden">PDF</span>
+                        </button>
+                      ) : null}
+
+                      <m.button
+                        type="button"
+                        onClick={() => setIsResultsOpen(false)}
+                        className="inline-flex h-9 w-9 items-center justify-center rounded-md border border-outline-variant/40 bg-white text-on-surface transition-colors hover:bg-surface-container-low"
+                        aria-label="Close tracking details"
+                        whileHover={{ rotate: 90 }}
+                        transition={{ duration: 0.2 }}
+                      >
+                        <X className="h-5 w-5" />
+                      </m.button>
+                    </div>
                   </div>
                 </div>
 

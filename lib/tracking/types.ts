@@ -47,6 +47,7 @@ export interface TrackingTaskDetail {
   title: string;
   status: string;
   remarks: string | null;
+  fileUrl: string | null;
 }
 
 export interface TrackingCheckDetail {
@@ -54,6 +55,7 @@ export interface TrackingCheckDetail {
   label: string;
   overall: string;
   remarks: string | null;
+  fileUrl: string | null;
   tasks: TrackingTaskDetail[];
 }
 
@@ -116,6 +118,7 @@ export interface CheckProgressView {
   status: CheckProgressStatus;
   timelineLabel: string | null;
   notes: string | null;
+  fileUrl: string | null;
   sortOrder: number | null;
   createdAt: string;
   updatedAt: string;
@@ -142,6 +145,7 @@ export interface CheckTaskView {
   publicStepNumber: number | null;
   dueDate: string | null;
   notes: string | null;
+  fileUrl: string | null;
   sortOrder: number | null;
   createdAt: string;
   updatedAt: string;

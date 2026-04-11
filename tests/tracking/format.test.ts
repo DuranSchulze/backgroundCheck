@@ -68,6 +68,7 @@ test("buildTrackingRecord merges overall progress, check progress, and activitie
       status: "COMPLETED",
       timelineLabel: "Completed Apr 1",
       notes: "Identity packet verified.",
+      fileUrl: "https://drive.google.com/check-1",
       sortOrder: 0,
       createdAt: new Date("2026-04-01T10:00:00.000Z").toISOString(),
       updatedAt: new Date("2026-04-01T12:00:00.000Z").toISOString(),
@@ -79,6 +80,7 @@ test("buildTrackingRecord merges overall progress, check progress, and activitie
       status: "ACTIVE_INVESTIGATION",
       timelineLabel: "Expected Apr 12",
       notes: "Employer outreach in progress.",
+      fileUrl: null,
       sortOrder: 1,
       createdAt: new Date("2026-04-01T10:00:00.000Z").toISOString(),
       updatedAt: new Date("2026-04-02T12:00:00.000Z").toISOString(),
@@ -108,6 +110,8 @@ test("buildTrackingRecord merges overall progress, check progress, and activitie
   assert.equal(record.checks[0]?.label, "Individual & Identity Checks");
   assert.equal(record.checks[0]?.overall, "Completed");
   assert.equal(record.checks[0]?.remarks, "Identity packet verified.");
+  assert.equal(record.checks[0]?.fileUrl, "https://drive.google.com/check-1");
+  assert.equal(record.checks[1]?.fileUrl, null);
   assert.equal(record.recentActivity[0]?.highlight, "Acme HR");
 });
 
@@ -125,6 +129,7 @@ test("buildTrackingRecord prefers numbered public tasks for pipeline steps", () 
       publicStepNumber: 2,
       dueDate: null,
       notes: null,
+      fileUrl: null,
       sortOrder: 1,
       createdAt: new Date("2026-04-02T10:00:00.000Z").toISOString(),
       updatedAt: new Date("2026-04-02T10:00:00.000Z").toISOString(),
@@ -142,6 +147,7 @@ test("buildTrackingRecord prefers numbered public tasks for pipeline steps", () 
       publicStepNumber: 1,
       dueDate: null,
       notes: "Government ID already matched.",
+      fileUrl: "https://example.com/task-1.pdf",
       sortOrder: 0,
       createdAt: new Date("2026-04-01T10:00:00.000Z").toISOString(),
       updatedAt: new Date("2026-04-01T10:00:00.000Z").toISOString(),
@@ -159,6 +165,7 @@ test("buildTrackingRecord prefers numbered public tasks for pipeline steps", () 
       publicStepNumber: null,
       dueDate: null,
       notes: null,
+      fileUrl: "https://example.com/internal.pdf",
       sortOrder: 2,
       createdAt: new Date("2026-04-02T11:00:00.000Z").toISOString(),
       updatedAt: new Date("2026-04-02T11:00:00.000Z").toISOString(),
@@ -182,8 +189,10 @@ test("buildTrackingRecord prefers numbered public tasks for pipeline steps", () 
   assert.equal(record.pipelineSteps[1]?.status, "in-progress");
   assert.equal(record.checks[0]?.tasks[0]?.label, "#1");
   assert.equal(record.checks[0]?.tasks[0]?.remarks, "Government ID already matched.");
+  assert.equal(record.checks[0]?.tasks[0]?.fileUrl, "https://example.com/task-1.pdf");
   assert.equal(record.checks[1]?.tasks[0]?.label, "#2");
   assert.equal(record.checks[1]?.tasks[0]?.status, "Active Investigation");
+  assert.equal(record.checks[1]?.tasks[0]?.fileUrl, null);
 });
 
 test("buildTrackingSample reflects the live order with fallback naming", () => {

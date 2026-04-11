@@ -32,6 +32,7 @@ interface ServiceCheckEditorProps {
   initialStatus: CheckProgressStatus;
   initialNotes: string | null;
   initialTimelineLabel: string | null;
+  initialFileUrl: string | null;
   trackingNumber: string;
   allCheckIds: string[];
   currentIndex: number;
@@ -43,6 +44,7 @@ export default function ServiceCheckEditor({
   initialStatus,
   initialNotes,
   initialTimelineLabel,
+  initialFileUrl,
   trackingNumber,
   allCheckIds,
   currentIndex,
@@ -52,6 +54,7 @@ export default function ServiceCheckEditor({
   const [timelineLabel, setTimelineLabel] = useState(
     initialTimelineLabel ?? "",
   );
+  const [fileUrl, setFileUrl] = useState(initialFileUrl ?? "");
   const [saved, setSaved] = useState(false);
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
@@ -63,6 +66,7 @@ export default function ServiceCheckEditor({
       const result = await actionUpdateServiceCheck(trackingNumber, checkId, {
         notes,
         timelineLabel,
+        fileUrl,
       });
       if (result?.error) {
         setError(result.error);
@@ -148,6 +152,26 @@ export default function ServiceCheckEditor({
           }}
           placeholder="Add context, blockers, or summary notes for this service…"
           className="mt-3 w-full resize-y rounded-md border border-outline-variant bg-white px-4 py-3 text-sm text-on-surface placeholder:text-outline focus:border-on-surface focus:outline-none focus:ring-2 focus:ring-slate-200"
+        />
+      </div>
+
+      <div>
+        <label
+          htmlFor="fileUrl"
+          className="block text-[11px] font-bold uppercase tracking-[0.2em] text-outline"
+        >
+          File Link
+        </label>
+        <input
+          id="fileUrl"
+          type="url"
+          value={fileUrl}
+          onChange={(event) => {
+            setFileUrl(event.target.value);
+            setSaved(false);
+          }}
+          placeholder="https://drive.google.com/..."
+          className="mt-3 w-full rounded-md border border-outline-variant bg-white px-4 py-3 text-sm text-on-surface placeholder:text-outline focus:border-on-surface focus:outline-none focus:ring-2 focus:ring-slate-200"
         />
       </div>
 

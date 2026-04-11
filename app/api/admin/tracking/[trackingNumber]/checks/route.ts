@@ -14,10 +14,18 @@ export async function PUT(request: Request, context: RouteContext) {
   const { trackingNumber } = await context.params;
 
   try {
-    const body = (await request.json()) as { checkId: string; status?: string; notes?: string };
+    const body = (await request.json()) as {
+      checkId: string;
+      status?: string;
+      notes?: string;
+      timelineLabel?: string;
+      fileUrl?: string | null;
+    };
     const detail = await updateServiceCheck(trackingNumber, body.checkId, {
       status: body.status,
       notes: body.notes,
+      timelineLabel: body.timelineLabel,
+      fileUrl: body.fileUrl,
     });
     return NextResponse.json({ detail });
   } catch (error) {

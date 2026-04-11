@@ -47,6 +47,7 @@ model CheckTypeProgress {
   status          ProgressStatus @default(QUEUED)
   timelineLabel   String?
   notes           String?        @db.Text
+  fileUrl         String?        @db.Text
   sortOrder       Int?
 
   createdAt DateTime @default(now())
@@ -71,6 +72,7 @@ model CheckTask {
   publicStepNumber    Int?
   dueDate             DateTime?
   notes               String?        @db.Text
+  fileUrl             String?        @db.Text
   sortOrder           Int?
 
   createdAt DateTime @default(now())

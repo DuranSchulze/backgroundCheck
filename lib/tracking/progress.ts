@@ -54,6 +54,7 @@ function mapCheck(
     status: ProgressStatus;
     timelineLabel: string | null;
     notes: string | null;
+    fileUrl: string | null;
     sortOrder: number | null;
     createdAt: Date;
     updatedAt: Date;
@@ -66,6 +67,7 @@ function mapCheck(
     status: toCheckProgressStatus(check.status),
     timelineLabel: check.timelineLabel,
     notes: check.notes,
+    fileUrl: check.fileUrl,
     sortOrder: check.sortOrder,
     createdAt: check.createdAt.toISOString(),
     updatedAt: check.updatedAt.toISOString(),
@@ -109,6 +111,7 @@ function mapTask(
     publicStepNumber: number | null;
     dueDate: Date | null;
     notes: string | null;
+    fileUrl: string | null;
     sortOrder: number | null;
     createdAt: Date;
     updatedAt: Date;
@@ -139,6 +142,7 @@ function mapTask(
     publicStepNumber: task.publicStepNumber,
     dueDate: task.dueDate?.toISOString() ?? null,
     notes: task.notes,
+    fileUrl: task.fileUrl,
     sortOrder: task.sortOrder,
     createdAt: task.createdAt.toISOString(),
     updatedAt: task.updatedAt.toISOString(),

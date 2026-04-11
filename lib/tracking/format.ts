@@ -100,6 +100,7 @@ export function buildCheckBreakdown(
                 status: task.status,
                 timelineLabel: null,
                 notes: null,
+                fileUrl: null,
                 sortOrder: null,
                 createdAt: task.createdAt,
                 updatedAt: task.updatedAt,
@@ -150,6 +151,7 @@ export function buildCheckBreakdown(
       title: task.title,
       status: formatProgressStatusLabel(task.status),
       remarks: buildTrackingTaskRemarks(task),
+      fileUrl: task.fileUrl,
     }));
 
     return {
@@ -157,6 +159,7 @@ export function buildCheckBreakdown(
       label: check.serviceLabel,
       overall: formatProgressStatusLabel(check.status),
       remarks: check.notes || check.timelineLabel || null,
+      fileUrl: check.fileUrl,
       tasks: taskDetails,
     };
   });
@@ -298,6 +301,7 @@ export function buildPipelineSteps(
           status: "QUEUED" as const,
           timelineLabel: null,
           notes: null,
+          fileUrl: null,
           sortOrder: index,
           createdAt: new Date(0).toISOString(),
           updatedAt: new Date(0).toISOString(),

@@ -76,6 +76,40 @@ function parsePublicStepNumber(value: unknown) {
   return parsed;
 }
 
+function parseFileUrl(value: unknown) {
+  if (value === null || value === undefined || value === "") {
+    return null;
+  }
+
+  if (typeof value !== "string") {
+    throw new AdminTrackingError("File link must be a URL or empty.");
+  }
+
+  const trimmed = value.trim();
+
+  if (!trimmed) {
+    return null;
+  }
+
+  try {
+    const parsed = new URL(trimmed);
+
+    if (parsed.protocol !== "http:" && parsed.protocol !== "https:") {
+      throw new AdminTrackingError(
+        "File link must start with http:// or https://.",
+      );
+    }
+  } catch (error) {
+    if (error instanceof AdminTrackingError) {
+      throw error;
+    }
+
+    throw new AdminTrackingError("File link must be a valid URL.");
+  }
+
+  return trimmed;
+}
+
 async function getRequiredOrder(trackingNumber: string) {
   const order = await findOrderRowByTrackingNumber(trackingNumber);
 
@@ -283,7 +317,12 @@ export async function initializeChecksFromSheet(trackingNumber: string) {
 export async function updateServiceCheck(
   trackingNumber: string,
   checkId: string,
-  payload: { status?: string; notes?: string; timelineLabel?: string },
+  payload: {
+    status?: string;
+    notes?: string;
+    timelineLabel?: string;
+    fileUrl?: string | null;
+  },
 ) {
   const check = await getCheckForOrder(trackingNumber, checkId);
   const taskCount = await prisma.checkTask.count({
@@ -300,6 +339,8 @@ export async function updateServiceCheck(
       notes: payload.notes !== undefined ? payload.notes : undefined,
       timelineLabel:
         payload.timelineLabel !== undefined ? payload.timelineLabel : undefined,
+      fileUrl:
+        payload.fileUrl !== undefined ? parseFileUrl(payload.fileUrl) : undefined,
     },
   });
 
@@ -398,6 +439,7 @@ export async function getServiceCheckById(
     serviceLabel: check.serviceLabel,
     status: check.status as CheckProgressStatus,
     notes: check.notes,
+    fileUrl: check.fileUrl,
     timelineLabel: check.timelineLabel,
     sortOrder: check.sortOrder,
     createdAt: check.createdAt.toISOString(),
@@ -415,6 +457,7 @@ export async function getServiceCheckById(
       publicStepNumber: task.publicStepNumber,
       dueDate: task.dueDate?.toISOString() ?? null,
       notes: task.notes,
+      fileUrl: task.fileUrl,
       sortOrder: task.sortOrder,
       createdAt: task.createdAt.toISOString(),
       updatedAt: task.updatedAt.toISOString(),
@@ -442,6 +485,7 @@ export async function createCheckTask(
     priority?: string;
     dueDate?: string | null;
     notes?: string;
+    fileUrl?: string | null;
     assigneeId?: string | null;
     publicStepNumber?: number | string | null;
   },
@@ -474,6 +518,7 @@ export async function createCheckTask(
       publicStepNumber,
       dueDate: parseDueDate(payload.dueDate),
       notes: payload.notes?.trim() || null,
+      fileUrl: parseFileUrl(payload.fileUrl),
       assigneeId,
       sortOrder: taskCount,
     },
@@ -493,6 +538,7 @@ export async function updateCheckTask(
     description?: string;
     priority?: string;
     dueDate?: string | null;
+    fileUrl?: string | null;
     assigneeId?: string | null;
     publicStepNumber?: number | string | null;
   },
@@ -538,6 +584,8 @@ export async function updateCheckTask(
       publicStepNumber,
       dueDate:
         payload.dueDate !== undefined ? parseDueDate(payload.dueDate) : undefined,
+      fileUrl:
+        payload.fileUrl !== undefined ? parseFileUrl(payload.fileUrl) : undefined,
       assigneeId,
     },
   });
