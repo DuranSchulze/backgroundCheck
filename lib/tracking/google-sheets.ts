@@ -28,6 +28,15 @@ const CHECKBOX_COLUMN_MAP: Array<{ header: string; checkType: CheckCategory }> =
   { header: "Specialized Checks", checkType: "SPECIALIZED_CHECKS" },
 ];
 
+type ApiAuth =
+  | { kind: "bearer"; token: string }
+  | { kind: "apikey"; key: string };
+
+type AuthCandidate = {
+  label: string;
+  getAuth: () => Promise<ApiAuth>;
+};
+
 let cachedToken: CachedToken | null = null;
 
 export class GoogleSheetsConfigError extends Error {}
@@ -149,6 +158,34 @@ async function loadServiceAccountCredentials(): Promise<GoogleCredentials> {
   return { clientEmail, privateKey };
 }
 
+function getAuthCandidates(): AuthCandidate[] {
+  const apiKey = process.env.GOOGLE_API_KEY?.trim();
+  const candidates: AuthCandidate[] = [];
+
+  if (apiKey) {
+    candidates.push({
+      label: "API key",
+      getAuth: async () => ({ kind: "apikey", key: apiKey }),
+    });
+  }
+
+  candidates.push({
+    label: "service account",
+    getAuth: async () => ({ kind: "bearer", token: await fetchGoogleAccessToken() }),
+  });
+
+  return candidates;
+}
+
+function applyAuth(url: URL, auth: ApiAuth): HeadersInit {
+  if (auth.kind === "apikey") {
+    url.searchParams.set("key", auth.key);
+    return {};
+  }
+
+  return { Authorization: `Bearer ${auth.token}` };
+}
+
 async function fetchGoogleAccessToken() {
   const now = Date.now();
 
@@ -224,7 +261,7 @@ function getSheetConfig() {
   };
 }
 
-async function resolveSheetRange(spreadsheetId: string, accessToken: string) {
+async function resolveSheetRange(spreadsheetId: string, auth: ApiAuth) {
   const configuredRange = process.env.GOOGLE_SHEETS_RANGE?.trim();
 
   if (configuredRange) {
@@ -235,11 +272,10 @@ async function resolveSheetRange(spreadsheetId: string, accessToken: string) {
     `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}`,
   );
   metadataUrl.searchParams.set("fields", "sheets(properties(title))");
+  const metadataHeaders = applyAuth(metadataUrl, auth);
 
   const response = await fetch(metadataUrl, {
-    headers: {
-      Authorization: `Bearer ${accessToken}`,
-    },
+    headers: metadataHeaders,
     cache: "no-store",
   });
 
@@ -269,19 +305,21 @@ async function resolveSheetRange(spreadsheetId: string, accessToken: string) {
   return `${firstSheetTitle}!A:ZZ`;
 }
 
-export async function readSheetRows() {
-  const { spreadsheetId, range } = getSheetConfig();
-  const accessToken = await fetchGoogleAccessToken();
-  const resolvedRange = range || (await resolveSheetRange(spreadsheetId, accessToken));
+async function readSheetRowsWithAuth(params: {
+  spreadsheetId: string;
+  range: string | null;
+  auth: ApiAuth;
+}) {
+  const { spreadsheetId, range, auth } = params;
+  const resolvedRange = range || (await resolveSheetRange(spreadsheetId, auth));
 
   const url = new URL(
     `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${encodeURIComponent(resolvedRange)}`,
   );
+  const headers = applyAuth(url, auth);
 
   const response = await fetch(url, {
-    headers: {
-      Authorization: `Bearer ${accessToken}`,
-    },
+    headers,
     cache: "no-store",
   });
 
@@ -294,6 +332,34 @@ export async function readSheetRows() {
 
   const payload = (await response.json()) as { values?: string[][] };
   return payload.values ?? [];
+}
+
+function getErrorMessage(error: unknown) {
+  return error instanceof Error ? error.message : String(error);
+}
+
+export async function readSheetRows() {
+  const { spreadsheetId, range } = getSheetConfig();
+  const candidates = getAuthCandidates();
+  const failures: string[] = [];
+
+  if (candidates.length === 1) {
+    const auth = await candidates[0].getAuth();
+    return readSheetRowsWithAuth({ spreadsheetId, range, auth });
+  }
+
+  for (const candidate of candidates) {
+    try {
+      const auth = await candidate.getAuth();
+      return await readSheetRowsWithAuth({ spreadsheetId, range, auth });
+    } catch (error) {
+      failures.push(`${candidate.label}: ${getErrorMessage(error)}`);
+    }
+  }
+
+  throw new GoogleSheetsDataError(
+    `Unable to read Google Sheets with any configured authentication method. Attempts: ${failures.join(" | ")}`,
+  );
 }
 
 export function buildHeaderMap(headerRow: string[]) {

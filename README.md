@@ -136,7 +136,20 @@ FirstTab!A:ZZ
 
 ### Google Sheets Authentication
 
-The Google Sheets integration uses a service account and supports three credential styles.
+The Google Sheets integration tries authentication in this order:
+
+1. API key, when `GOOGLE_API_KEY` is configured.
+2. Service account, when the API-key request fails or no API key is configured.
+
+This means both methods can be configured at the same time. API keys usually work only for publicly readable or API-key-accessible sheets. Private sheets should be shared with the service-account email so the fallback path can read them.
+
+Optional API-key auth:
+
+```env
+GOOGLE_API_KEY=your-google-api-key
+```
+
+Service-account auth supports three credential styles.
 
 Option 1: full JSON in one environment variable:
 
@@ -708,6 +721,7 @@ ADMIN_USERNAME=admin
 ADMIN_PASSWORD=filepino-admin
 GOOGLE_SHEETS_SPREADSHEET_ID=your-spreadsheet-id
 GOOGLE_SHEETS_RANGE=Tracking!A1:ZZ
+GOOGLE_API_KEY=your-google-api-key
 GOOGLE_SERVICE_ACCOUNT_JSON_FILE=/absolute/path/to/service-account.json
 ```
 
