@@ -44,3 +44,6 @@ next-env.d.ts
 
 # local notes and scratch files
 /IDEAS/
+
+# Google service account credentials - never commit these
+public/filepino-bgcheck-*.json
