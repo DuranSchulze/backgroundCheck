@@ -1,25 +1,22 @@
 import { mockTrackingRecords } from "@/lib/tracking/mock-data";
+import { SheetsApiError, SheetsConfigError } from "@/lib/sheets/intake";
 import {
-  GoogleSheetsConfigError,
-  findOrderRowByTrackingNumber,
-  listSheetOrderSnapshots,
-} from "@/lib/tracking/google-sheets";
+  findOrderByTrackingNumber,
+  listOrders,
+} from "@/lib/sheets/intake";
+import {
+  getOrderProgress,
+  getCheckProgress,
+  getActivities,
+} from "@/lib/sheets/operations";
 import { buildTrackingRecord, buildTrackingSample } from "@/lib/tracking/format";
 import { normalizeReferenceNumber } from "@/lib/tracking/normalize";
-import {
-  getOrderProgressByTrackingNumber,
-  getOrderWorkflowTasks,
-} from "@/lib/tracking/progress";
 import type { TrackingRecord, TrackingSample } from "@/lib/tracking/types";
 
 type DataSource = "mock" | "google-sheets";
 
-class TrackingConfigError extends Error {}
-
 function getDataSource(): DataSource {
-  if (process.env.TRACKING_DATA_SOURCE === "mock") {
-    return "mock";
-  }
+  if (process.env.TRACKING_DATA_SOURCE === "mock") return "mock";
 
   if (
     process.env.TRACKING_DATA_SOURCE === "google-sheets" ||
@@ -41,72 +38,62 @@ function mapToSample(record: TrackingRecord): TrackingSample {
 }
 
 function findMockRecord(referenceNumber: string) {
-  const normalizedReference = normalizeReferenceNumber(referenceNumber);
-
+  const normalized = normalizeReferenceNumber(referenceNumber);
   return (
     mockTrackingRecords.find(
-      (record) =>
-        normalizeReferenceNumber(record.referenceNumber) === normalizedReference,
+      (r) => normalizeReferenceNumber(r.referenceNumber) === normalized,
     ) ?? null
   );
 }
 
-function listMockSamples() {
+function listMockSamples(): TrackingSample[] {
   return mockTrackingRecords.map(mapToSample);
 }
 
-async function findGoogleSheetsRecord(referenceNumber: string) {
-  const order = await findOrderRowByTrackingNumber(referenceNumber);
+async function findGoogleSheetsRecord(
+  referenceNumber: string,
+): Promise<TrackingRecord | null> {
+  const order = await findOrderByTrackingNumber(referenceNumber);
+  if (!order) return null;
 
-  if (!order) {
-    return null;
-  }
+  const [progress, checks, activities] = await Promise.all([
+    getOrderProgress(order.trackingNumber),
+    getCheckProgress(order.trackingNumber),
+    getActivities(order.trackingNumber),
+  ]);
 
-  const progressData = await getOrderProgressByTrackingNumber(order.trackingNumber);
-  const tasks = await getOrderWorkflowTasks(order.trackingNumber);
-
-  return buildTrackingRecord({
-    order,
-    progress: progressData.progress,
-    checks: progressData.checks,
-    tasks,
-    activities: progressData.activities,
-  });
+  return buildTrackingRecord({ order, progress, checks, activities });
 }
 
-async function listGoogleSheetsSamples() {
-  const orders = await listSheetOrderSnapshots();
+async function listGoogleSheetsSamples(): Promise<TrackingSample[]> {
+  const orders = await listOrders();
 
   const samples = await Promise.all(
     orders.slice(0, 10).map(async (order) => {
-      const progressData = await getOrderProgressByTrackingNumber(order.trackingNumber);
-
-      return buildTrackingSample({
-        order,
-        progress: progressData.progress,
-      });
+      const progress = await getOrderProgress(order.trackingNumber);
+      return buildTrackingSample({ order, progress });
     }),
   );
 
   return samples;
 }
 
-export async function findTrackingRecord(referenceNumber: string) {
+export async function findTrackingRecord(
+  referenceNumber: string,
+): Promise<TrackingRecord | null> {
   return getDataSource() === "google-sheets"
     ? findGoogleSheetsRecord(referenceNumber)
     : findMockRecord(referenceNumber);
 }
 
-export async function listTrackingSamples() {
+export async function listTrackingSamples(): Promise<TrackingSample[]> {
   return getDataSource() === "google-sheets"
     ? listGoogleSheetsSamples()
     : listMockSamples();
 }
 
-export function isTrackingConfigError(error: unknown): error is TrackingConfigError {
-  return (
-    error instanceof TrackingConfigError || error instanceof GoogleSheetsConfigError
-  );
+export function isTrackingConfigError(
+  error: unknown,
+): error is SheetsConfigError | SheetsApiError {
+  return error instanceof SheetsConfigError || error instanceof SheetsApiError;
 }
-
-export { TrackingConfigError };
