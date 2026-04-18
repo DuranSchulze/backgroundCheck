@@ -49,7 +49,7 @@ export default function AdminLoginPage() {
         },
       );
 
-      router.replace("/admin");
+      router.replace("/");
       router.refresh();
     } catch (submitError) {
       setError(
