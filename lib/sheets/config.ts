@@ -8,7 +8,10 @@ export type GoogleCredentials = {
   privateKey: string;
 };
 
-function parseCredentialsJson(rawJson: string, label: string): GoogleCredentials {
+function parseCredentialsJson(
+  rawJson: string,
+  label: string,
+): GoogleCredentials {
   const parsed = JSON.parse(rawJson) as {
     client_email?: string;
     private_key?: string;
@@ -43,7 +46,10 @@ export async function loadCredentials(): Promise<GoogleCredentials> {
 
   const filePath =
     process.env.GOOGLE_SERVICE_ACCOUNT_JSON_FILE?.trim() ||
-    path.join(/* turbopackIgnore: true */ process.cwd(), "service-account.json");
+    path.join(
+      /* turbopackIgnore: true */ process.cwd(),
+      "service-account.json",
+    );
 
   try {
     const fileContents = await readFile(filePath, "utf8");
@@ -115,4 +121,29 @@ export function getOperationsSheetId(): string {
 /** Optional range override for the intake sheet (e.g. "Sheet1!A:Z"). Auto-detected if omitted. */
 export function getIntakeSheetRange(): string | null {
   return process.env.GOOGLE_SHEETS_RANGE?.trim() || null;
+}
+
+/** Optional range override for the operations sheet. Auto-detected if omitted. */
+export function getOperationsSheetRange(): string | null {
+  return process.env.GOOGLE_SHEETS_OPERATIONS_RANGE?.trim() || null;
+}
+
+/**
+ * GOOGLE_DRIVE_FOLDER_ID — root Drive folder containing per-client subfolders
+ * with downloadable files (reports, attachments, etc.).
+ */
+export function getDriveRootFolderId(): string {
+  const id = process.env.GOOGLE_DRIVE_FOLDER_ID?.trim();
+  if (!id) {
+    throw new SheetsConfigError(
+      "GOOGLE_DRIVE_FOLDER_ID is not set. " +
+        "Set it to the Drive folder ID that holds per-client subfolders.",
+    );
+  }
+  return id;
+}
+
+/** Returns the Drive folder ID if configured, else null (non-throwing variant). */
+export function getOptionalDriveRootFolderId(): string | null {
+  return process.env.GOOGLE_DRIVE_FOLDER_ID?.trim() || null;
 }

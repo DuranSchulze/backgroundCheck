@@ -5,7 +5,7 @@ Filepino Background Check Tracker is a Next.js application for tracking backgrou
 - A public client portal where customers enter a tracking/reference number and view their background-check status.
 - A protected admin operations console where internal staff browse Google Sheets intake rows, manage service checks, create workflow tasks, assign owners, and control what appears in the public tracker.
 
-This README reflects the system as of April 12, 2026.
+This README reflects the system as of April 14, 2026.
 
 ## Tech Stack
 
@@ -13,28 +13,20 @@ This README reflects the system as of April 12, 2026.
 - React 19
 - TypeScript
 - Tailwind CSS 4
-- Prisma 7
-- PostgreSQL
-- Google Sheets API
+- Google Sheets API (intake + operations)
+- Google Drive API (per-client files)
 - shadcn/Radix-style UI components
 - Framer Motion for the public tracking modal
 - Node test runner with `tsx`
 
 ## Core Mental Model
 
-The system intentionally separates intake data from operational progress data.
+The system runs entirely on Google Sheets and Google Drive — there is no database.
 
-- Google Sheets is the intake source of truth. It contains requestor details, subject details, selected background-check categories, uploaded form fields, and the required tracking number.
-- PostgreSQL stores operational progress. It stores order progress, service-check records, service tasks, assignees, notes, file links, and public activity updates.
-- `trackingNumber` joins the Google Sheets row with the PostgreSQL workflow records.
-
-An order is best understood as:
-
-- One Google Sheets row.
-- Zero or one `OrderProgress` record.
-- Zero or more `CheckTypeProgress` records under that order.
-- Zero or more `CheckTask` records under each service check.
-- Zero or more `ProgressActivity` records for the public activity feed.
+- **Intake sheet** (`GOOGLE_SHEETS_SPREADSHEET_ID`) is the source of truth for every background-check request. Google Forms writes to it; the app reads from it only. Required column: `Order Tracking Number`.
+- **Tracking sheet** (`GOOGLE_SHEETS_OPERATIONS_ID`) stores the per-applicant status and is the primary read/write store managed by staff. It uses a single tab with columns: `TrackingNumber`, `ApplicantName`, `Status`, `Summary`, `ETA`, `Notes`, `DriveFolderUrl`, `UpdatedAt`. See `.env.example` for the full recognized column list.
+- **Drive root folder** (`GOOGLE_DRIVE_FOLDER_ID`) holds one subfolder per client. The app searches this folder for a subfolder whose name matches the tracking number or applicant name. Staff can override the match by pasting a Drive folder URL into the tracking sheet's `DriveFolderUrl` column.
+- `trackingNumber` is the join key across the intake sheet, the tracking sheet, and (via subfolder name) the Drive folder.
 
 ## Current Feature Set
 
@@ -173,7 +165,7 @@ GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\n...\n-----END P
 If no credential env var is provided, the code currently falls back to:
 
 ```text
-public/filepino-bgcheck-cb51fa768a50.json
+public/filepino-bgcheck-128c55091a24.json
 ```
 
 For production, prefer environment variables or a private server-side file path. Do not commit new service-account credentials.
@@ -547,19 +539,13 @@ Staff creation and updates are implemented through server actions in:
 app/actions/staff.ts
 ```
 
-## Database Schema
+## Data Schema
 
-Prisma schema:
+All state lives in Google Sheets + Google Drive.
 
-```text
-prisma/schema.prisma
-```
-
-Generated Prisma client output:
-
-```text
-lib/generated/prisma
-```
+- **Intake sheet** — see the expected columns at the bottom of `.env.example`.
+- **Tracking sheet** — single tab with `TrackingNumber`, `ApplicantName`, `Status`, `Summary`, `ETA`, `Notes`, `DriveFolderUrl`, `UpdatedAt`. Column names are matched case-insensitively; missing columns are treated as empty. Status values: `QUEUED | IN_PROGRESS | ACTIVE_INVESTIGATION | COMPLETED | ON_HOLD`.
+- **Drive root folder** — one subfolder per client; name should contain the tracking number or applicant name so the app can find it. Use the `DriveFolderUrl` column on the tracking sheet to override/QA the match.
 
 ### Enums
 
@@ -706,26 +692,24 @@ cp .env.example .env.local
 Common local mock setup:
 
 ```env
-TRACKING_DATA_SOURCE=mock
 ADMIN_USERNAME=admin
 ADMIN_PASSWORD=filepino-admin
-DATABASE_URL=postgresql://user:password@localhost:5432/background_check_tracker
 ```
 
-Google Sheets setup:
+Google Sheets + Drive setup:
 
 ```env
-TRACKING_DATA_SOURCE=google-sheets
-DATABASE_URL=postgresql://user:password@localhost:5432/background_check_tracker
 ADMIN_USERNAME=admin
 ADMIN_PASSWORD=filepino-admin
-GOOGLE_SHEETS_SPREADSHEET_ID=your-spreadsheet-id
+GOOGLE_SHEETS_SPREADSHEET_ID=your-intake-spreadsheet-id
+GOOGLE_SHEETS_OPERATIONS_ID=your-tracking-spreadsheet-id
+GOOGLE_DRIVE_FOLDER_ID=your-drive-root-folder-id
 GOOGLE_SHEETS_RANGE=Tracking!A1:ZZ
 GOOGLE_API_KEY=your-google-api-key
 GOOGLE_SERVICE_ACCOUNT_JSON_FILE=/absolute/path/to/service-account.json
 ```
 
-`DATABASE_URL` is required for Prisma/PostgreSQL workflows.
+Share both Google Sheets and the Drive root folder with the service-account email — Editor on the tracking sheet (writes), Viewer on the intake sheet, Viewer on the Drive folder.
 
 ## Local Development
 
@@ -733,18 +717,6 @@ Install dependencies:
 
 ```bash
 npm install
-```
-
-Run database migrations:
-
-```bash
-npx prisma migrate dev
-```
-
-Generate Prisma client when needed:
-
-```bash
-npx prisma generate
 ```
 
 Start the development server:
@@ -885,8 +857,8 @@ The newest activity appears first in the public tracker.
 ## Known Notes
 
 - The admin dashboard root is intentionally still a placeholder for future overview widgets.
-- Google Sheets provides intake data, not workflow state.
-- PostgreSQL provides workflow state, not the original order form.
+- Google Sheets (intake) provides the request data; Google Sheets (tracking) provides the workflow state.
+- Google Drive provides per-client file delivery.
 - Service checks are synced from selected checkbox categories.
 - Public task steps are opt-in through `publicStepNumber`.
 - Overall and service statuses are mostly driven by rollups once tasks exist.

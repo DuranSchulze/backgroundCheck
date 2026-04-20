@@ -1,8 +1,11 @@
 import { createSign } from "node:crypto";
 import { getApiKey, loadCredentials } from "@/lib/sheets/config";
 
-// Full spreadsheets scope — required for both read and write operations.
-const SHEETS_SCOPE = "https://www.googleapis.com/auth/spreadsheets";
+// Full spreadsheets scope (read/write) plus Drive read-only for file listing.
+const SHEETS_SCOPE = [
+  "https://www.googleapis.com/auth/spreadsheets",
+  "https://www.googleapis.com/auth/drive.readonly",
+].join(" ");
 const TOKEN_ENDPOINT = "https://oauth2.googleapis.com/token";
 
 export class SheetsApiError extends Error {}
@@ -220,4 +223,97 @@ export async function appendRows(
       `Append failed (${response.status}): ${await response.text()}`,
     );
   }
+}
+
+// ─── Google Drive helpers ─────────────────────────────────────────────────────
+
+export interface DriveFile {
+  id: string;
+  name: string;
+  mimeType: string;
+  webViewLink: string | null;
+  webContentLink: string | null;
+  modifiedTime: string | null;
+  iconLink: string | null;
+  size: string | null;
+}
+
+const DRIVE_FOLDER_MIME = "application/vnd.google-apps.folder";
+const DRIVE_FILE_FIELDS =
+  "id,name,mimeType,webViewLink,webContentLink,modifiedTime,iconLink,size";
+
+/**
+ * Lists files/folders inside a given Drive folder (non-trashed).
+ * Returns top-level children only.
+ */
+export async function listDriveFolderChildren(
+  folderId: string,
+): Promise<DriveFile[]> {
+  const auth = await resolveAuth();
+  const url = new URL("https://www.googleapis.com/drive/v3/files");
+  url.searchParams.set(
+    "q",
+    `'${folderId.replace(/'/g, "\\'")}' in parents and trashed = false`,
+  );
+  url.searchParams.set("fields", `files(${DRIVE_FILE_FIELDS})`);
+  url.searchParams.set("pageSize", "200");
+  url.searchParams.set("supportsAllDrives", "true");
+  url.searchParams.set("includeItemsFromAllDrives", "true");
+  const headers = applyAuth(url, auth);
+
+  const response = await fetch(url, { headers, cache: "no-store" });
+  if (!response.ok) {
+    throw new SheetsApiError(
+      `Drive list failed (${response.status}): ${await response.text()}`,
+    );
+  }
+
+  const payload = (await response.json()) as { files?: DriveFile[] };
+  return payload.files ?? [];
+}
+
+/**
+ * Finds a direct child folder of `parentFolderId` whose name matches one of the
+ * supplied candidate strings (case-insensitive, trimmed). Returns null if none.
+ */
+export async function findDriveSubfolderByName(
+  parentFolderId: string,
+  candidates: string[],
+): Promise<DriveFile | null> {
+  const normalized = candidates
+    .map((candidate) => candidate?.trim().toLowerCase())
+    .filter((candidate): candidate is string => Boolean(candidate));
+
+  if (normalized.length === 0) return null;
+
+  const children = await listDriveFolderChildren(parentFolderId);
+  return (
+    children.find(
+      (item) =>
+        item.mimeType === DRIVE_FOLDER_MIME &&
+        normalized.some((candidate) =>
+          item.name.trim().toLowerCase().includes(candidate),
+        ),
+    ) ?? null
+  );
+}
+
+/**
+ * Extracts a Drive folder/file ID from a typical Drive URL, or returns the
+ * string untouched if it already looks like an ID. Returns null on bad input.
+ */
+export function parseDriveFolderId(input: string | null | undefined): string | null {
+  if (!input) return null;
+  const trimmed = input.trim();
+  if (!trimmed) return null;
+
+  const folderMatch = trimmed.match(/\/folders\/([a-zA-Z0-9_-]+)/);
+  if (folderMatch) return folderMatch[1];
+
+  const openIdMatch = trimmed.match(/[?&]id=([a-zA-Z0-9_-]+)/);
+  if (openIdMatch) return openIdMatch[1];
+
+  if (/^[a-zA-Z0-9_-]{10,}$/.test(trimmed)) return trimmed;
+
+  return null;
 }

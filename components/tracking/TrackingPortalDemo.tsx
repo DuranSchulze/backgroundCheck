@@ -8,6 +8,7 @@ import {
   ClipboardList,
   Download,
   FileSearch,
+  FolderOpen,
   Fingerprint,
   ShieldCheck,
   X,
@@ -16,6 +17,7 @@ import CheckBreakdown from "@/components/tracking/CheckBreakdown";
 import RecentActivity from "@/components/tracking/RecentActivity";
 import RequestMetadata from "@/components/tracking/RequestMetadata";
 import StatusCard from "@/components/tracking/StatusCard";
+import TrackingFiles from "@/components/tracking/TrackingFiles";
 import TrackingSearch from "@/components/tracking/TrackingSearch";
 import VerificationPipeline from "@/components/tracking/VerificationPipeline";
 import { normalizeReferenceNumber } from "@/lib/tracking/normalize";
@@ -168,7 +170,9 @@ export default function TrackingPortalDemo() {
                           className="inline-flex h-9 items-center gap-2 rounded-md border border-outline-variant/40 bg-white px-3 text-xs font-bold uppercase tracking-[0.14em] text-on-surface transition-colors hover:bg-surface-container-low"
                         >
                           <Download className="h-4 w-4" />
-                          <span className="hidden sm:inline">Export Report</span>
+                          <span className="hidden sm:inline">
+                            Export Report
+                          </span>
                           <span className="sm:hidden">PDF</span>
                         </button>
                       ) : null}
@@ -328,6 +332,26 @@ export default function TrackingPortalDemo() {
                             Recent Activity
                           </div>
                           <RecentActivity items={record.recentActivity} />
+                        </m.div>
+
+                        <m.div
+                          initial={{ opacity: 0, y: 18 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{
+                            duration: 0.28,
+                            delay: 0.42,
+                            ease: easeOut,
+                          }}
+                          className="py-5"
+                        >
+                          <div className="mb-4 flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.24em] text-outline">
+                            <FolderOpen className="h-3.5 w-3.5 text-on-surface" />
+                            Attached Files
+                          </div>
+                          <TrackingFiles
+                            files={record.files ?? []}
+                            folderUrl={record.driveFolderUrl ?? null}
+                          />
                         </m.div>
                       </div>
                     </div>

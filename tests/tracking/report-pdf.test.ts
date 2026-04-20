@@ -61,6 +61,8 @@ const record: TrackingRecord = {
       highlight: "Admin",
     },
   ],
+  files: [],
+  driveFolderUrl: null,
 };
 
 test("buildTrackingReportLines includes linked check and task files", () => {

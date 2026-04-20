@@ -59,6 +59,17 @@ export interface TrackingCheckDetail {
   tasks: TrackingTaskDetail[];
 }
 
+export interface TrackingFile {
+  id: string;
+  name: string;
+  mimeType: string;
+  viewUrl: string | null;
+  downloadUrl: string | null;
+  modifiedTime: string | null;
+  iconUrl: string | null;
+  size: string | null;
+}
+
 export interface TrackingRecord {
   referenceNumber: string;
   status: TrackingStatus;
@@ -70,6 +81,8 @@ export interface TrackingRecord {
   pipelineSteps: PipelineStepData[];
   checks: TrackingCheckDetail[];
   recentActivity: ActivityItem[];
+  files: TrackingFile[];
+  driveFolderUrl: string | null;
 }
 
 export interface TrackingSample {

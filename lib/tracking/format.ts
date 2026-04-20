@@ -10,11 +10,13 @@ import type {
   ProgressActivityView,
   SheetOrderSnapshot,
   TrackingCheckDetail,
+  TrackingFile,
   TrackingRecord,
   TrackingSample,
   TrackingStatus,
   TrackingTaskDetail,
 } from "@/lib/tracking/types";
+import type { DriveFile } from "@/lib/sheets/client";
 import { formatReferenceNumberForDisplay } from "@/lib/tracking/normalize";
 
 const CHECK_CATEGORY_LABELS: Record<CheckCategory, string> = {
@@ -406,12 +408,27 @@ export function buildActivityFeed(
   ];
 }
 
+export function mapDriveFileToTrackingFile(file: DriveFile): TrackingFile {
+  return {
+    id: file.id,
+    name: file.name,
+    mimeType: file.mimeType,
+    viewUrl: file.webViewLink,
+    downloadUrl: file.webContentLink,
+    modifiedTime: file.modifiedTime,
+    iconUrl: file.iconLink,
+    size: file.size,
+  };
+}
+
 export function buildTrackingRecord(params: {
   order: SheetOrderSnapshot;
   progress: OrderProgressSummary | null;
   checks: CheckProgressView[];
   tasks?: CheckTaskView[];
   activities: ProgressActivityView[];
+  files?: DriveFile[];
+  driveFolderUrl?: string | null;
 }): TrackingRecord {
   const status = mapProgressStatusToTrackingStatus(params.progress?.overallStatus ?? null);
   const percent = calculateProgressPercent(params.progress, params.checks);
@@ -431,6 +448,8 @@ export function buildTrackingRecord(params: {
     ),
     checks: buildCheckBreakdown(params.checks, params.tasks ?? []),
     recentActivity: buildActivityFeed(params.order, params.activities),
+    files: (params.files ?? []).map(mapDriveFileToTrackingFile),
+    driveFolderUrl: params.driveFolderUrl ?? null,
   };
 }
 
